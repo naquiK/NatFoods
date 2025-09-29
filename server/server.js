@@ -24,18 +24,18 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }))
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // Routes
-app.use("/api/auth", require("./router/authRoute"))
+app.use("/api/auth", require("./router/userRoute"))
 app.use("/api/products", require("./router/productRoute"))
 app.use("/api/admin", require("./router/adminRoute"))
-app.use("/api/cart", require("./router/cartRoute"))
-app.use("/api/orders", require("./router/orderRoute"))
+app.use("/api/cart", require("./router/cartRoute")) 
+app.use("/api/orders", require("./router/orderRoute")) 
 app.use("/api/settings", require("./router/settingsRoute"))
 app.use("/api/upload", require("./router/uploadRoute")) // Added upload routes for Cloudinary integration
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ message: "Server is running!", timestamp: new Date().toISOString() })
-})
+}) 
 
 // Error handling middleware
 app.use((err, req, res, next) => {

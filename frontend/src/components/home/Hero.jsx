@@ -1,7 +1,13 @@
 import Button from "../ui/Button"
 import { Link } from "react-router-dom"
+import { useSettings } from "../../context/SettingsContext"
 
 export default function Hero() {
+  const { settings } = useSettings()
+  const lines = settings?.homepageTaglines?.length
+    ? settings.homepageTaglines
+    : ["Nature's Best, Delivered to Your Doorstep.", "Simple, Organic Goodness. No Chemicals.", "Prepared On-Demand."]
+
   return (
     <section className="hero">
       <div className="section-padding">
@@ -12,15 +18,12 @@ export default function Hero() {
                 style={{ width: 6, height: 6, borderRadius: 999, background: "var(--color-accent)" }}
                 aria-hidden="true"
               />
-              Fresh drops live — don’t blink
+              {settings?.siteName || "Nat-Organics"}
             </span>
             <h1 className="text-balance" style={{ fontSize: "clamp(32px, 6vw, 56px)", margin: "6px 0 8px" }}>
-              Shop the future of <span style={{ color: "var(--color-accent)" }}>style & tech</span>.
+              {lines[0]}
             </h1>
-            <p style={{ color: "var(--color-muted)", maxWidth: 620 }}>
-              Discover curated essentials, limited-run collabs, and everyday upgrades. Built for speed, packed with
-              delight.
-            </p>
+            <p style={{ color: "var(--color-muted)", maxWidth: 620 }}>{lines.slice(1).join(" ")}</p>
             <div className="hero-actions">
               <Button as={Link} to="/products" variant="primary" size="large">
                 Explore Products

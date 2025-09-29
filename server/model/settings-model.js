@@ -73,6 +73,23 @@ const settingsSchema = new mongoose.Schema(
         default: 5,
       },
     },
+    homepageTaglines: {
+      type: [String],
+      default: [
+        "Nature's Best, Delivered to Your Doorstep.",
+        "Simple, Organic Goodness. No Chemicals.",
+        "Prepared On-Demand.",
+      ],
+    },
+    homepageAbout: {
+      type: String,
+      default:
+        "Nat-Organics, as the name suggests, stands for Natural and Organic foods. We are a team of passionate people who have worked with naturalists and organic harvesters to discover methods, foods, and ingredients that boost energy, health, and nutrition. We're dedicated to helping you and your family achieve a healthy mind and body. We assure you that every order will enrich your nourishment and improve your well-being.",
+    },
+    homepageCategories: {
+      type: [String],
+      default: ["Flour", "Pulses", "Edible Oil"],
+    },
   },
   {
     timestamps: true,

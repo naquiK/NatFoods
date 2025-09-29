@@ -1,8 +1,13 @@
 "use client"
 
-const categories = ["Sneakers", "Hoodies", "Tees", "Accessories", "Denim", "Athleisure", "Outerwear", "Caps"]
+import { useSettings } from "../../context/SettingsContext"
 
 const CategoryPills = ({ onSelect }) => {
+  const { settings } = useSettings()
+  const categories = settings?.homepageCategories?.length
+    ? settings.homepageCategories
+    : ["Flour", "Pulses", "Edible Oil"]
+
   return (
     <section aria-label="Browse categories" className="section-padding" style={{ background: "var(--color-bg)" }}>
       <div className="container-max">

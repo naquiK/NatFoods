@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSettings } from "../../context/SettingsContext"
-import { api } from "../../utils/api"
+import { settingsAPI } from "../../utils/api"
 import Button from "../../components/ui/Button"
 import LoadingSpinner from "../../components/ui/LoadingSpinner"
 
@@ -14,11 +14,16 @@ const SiteSettings = () => {
     siteDescription: "",
     logo: "",
     favicon: "",
-    primaryColor: "#1c1917",
-    secondaryColor: "#78716c",
-    contactEmail: "",
-    contactPhone: "",
-    address: "",
+    theme: {
+      primaryColor: "#0b3d2e",
+      secondaryColor: "#f5f5f0",
+      accentColor: "#8b7355",
+    },
+    contactInfo: {
+      email: "",
+      phone: "",
+      address: "",
+    },
     socialMedia: {
       facebook: "",
       twitter: "",
@@ -30,6 +35,9 @@ const SiteSettings = () => {
       metaDescription: "",
       keywords: "",
     },
+    homepageTaglines: [],
+    homepageAbout: "",
+    homepageCategories: [],
   })
 
   useEffect(() => {
@@ -37,13 +45,18 @@ const SiteSettings = () => {
       setFormData({
         siteName: settings.siteName || "",
         siteDescription: settings.siteDescription || "",
-        logo: settings.logo || "",
-        favicon: settings.favicon || "",
-        primaryColor: settings.primaryColor || "#1c1917",
-        secondaryColor: settings.secondaryColor || "#78716c",
-        contactEmail: settings.contactEmail || "",
-        contactPhone: settings.contactPhone || "",
-        address: settings.address || "",
+        logo: settings.logo?.url || "",
+        favicon: settings.favicon?.url || "",
+        theme: {
+          primaryColor: settings.theme?.primaryColor || "#0b3d2e",
+          secondaryColor: settings.theme?.secondaryColor || "#f5f5f0",
+          accentColor: settings.theme?.accentColor || "#8b7355",
+        },
+        contactInfo: {
+          email: settings.contactInfo?.email || "",
+          phone: settings.contactInfo?.phone || "",
+          address: settings.contactInfo?.address || "",
+        },
         socialMedia: {
           facebook: settings.socialMedia?.facebook || "",
           twitter: settings.socialMedia?.twitter || "",
@@ -53,8 +66,11 @@ const SiteSettings = () => {
         seo: {
           metaTitle: settings.seo?.metaTitle || "",
           metaDescription: settings.seo?.metaDescription || "",
-          keywords: settings.seo?.keywords || "",
+          keywords: (settings.seo?.keywords || []).join(", "),
         },
+        homepageTaglines: settings.homepageTaglines || [],
+        homepageAbout: settings.homepageAbout || "",
+        homepageCategories: settings.homepageCategories || [],
       })
     }
   }, [settings])
@@ -63,19 +79,43 @@ const SiteSettings = () => {
     e.preventDefault()
     setLoading(true)
     try {
-      const response = await api.put("/admin/settings", formData)
-      updateSettings(response.data)
+      const payload = {
+        siteName: formData.siteName,
+        siteDescription: formData.siteDescription,
+        // accept urls for logo/favicon; backend will merge
+        logo: formData.logo ? { url: formData.logo } : settings.logo,
+        favicon: formData.favicon ? { url: formData.favicon } : settings.favicon,
+        theme: formData.theme,
+        contactInfo: formData.contactInfo,
+        socialMedia: formData.socialMedia,
+        seo: {
+          metaTitle: formData.seo.metaTitle,
+          metaDescription: formData.seo.metaDescription,
+          keywords: formData.seo.keywords
+            ? formData.seo.keywords
+                .split(",")
+                .map((k) => k.trim())
+                .filter(Boolean)
+            : [],
+        },
+        homepageTaglines: formData.homepageTaglines,
+        homepageAbout: formData.homepageAbout,
+        homepageCategories: formData.homepageCategories,
+      }
+      const res = await settingsAPI.update(payload)
+      updateSettings(res.data.settings)
       alert("Settings updated successfully!")
     } catch (error) {
       console.error("Error updating settings:", error)
-      alert("Error updating settings. Please try again.")
+      alert(error.response?.data?.message || "Error updating settings. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target
+    // dot-notation updates for nested objects
     if (name.includes(".")) {
       const [parent, child] = name.split(".")
       setFormData((prev) => ({
@@ -86,11 +126,16 @@ const SiteSettings = () => {
         },
       }))
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }))
+      setFormData((prev) => ({ ...prev, [name]: value }))
     }
+  }
+
+  const handleCommaList = (name, value) => {
+    const arr = value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+    setFormData((prev) => ({ ...prev, [name]: arr }))
   }
 
   return (
@@ -112,7 +157,7 @@ const SiteSettings = () => {
                   type="text"
                   name="siteName"
                   value={formData.siteName}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="Your Store Name"
                 />
@@ -121,9 +166,9 @@ const SiteSettings = () => {
                 <label className="block text-sm font-medium text-stone-700 mb-2">Contact Email</label>
                 <input
                   type="email"
-                  name="contactEmail"
-                  value={formData.contactEmail}
-                  onChange={handleInputChange}
+                  name="contactInfo.email"
+                  value={formData.contactInfo.email}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="contact@yourstore.com"
                 />
@@ -134,7 +179,7 @@ const SiteSettings = () => {
               <textarea
                 name="siteDescription"
                 value={formData.siteDescription}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 rows={3}
                 className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                 placeholder="Brief description of your store"
@@ -145,9 +190,9 @@ const SiteSettings = () => {
                 <label className="block text-sm font-medium text-stone-700 mb-2">Contact Phone</label>
                 <input
                   type="tel"
-                  name="contactPhone"
-                  value={formData.contactPhone}
-                  onChange={handleInputChange}
+                  name="contactInfo.phone"
+                  value={formData.contactInfo.phone}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -156,11 +201,49 @@ const SiteSettings = () => {
                 <label className="block text-sm font-medium text-stone-700 mb-2">Address</label>
                 <input
                   type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
+                  name="contactInfo.address"
+                  value={formData.contactInfo.address}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="Your business address"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Homepage Content */}
+          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+            <h2 className="text-xl font-semibold text-stone-900 mb-6">Homepage Content</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Taglines (comma separated)</label>
+                <input
+                  type="text"
+                  value={(formData.homepageTaglines || []).join(", ")}
+                  onChange={(e) => handleCommaList("homepageTaglines", e.target.value)}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Nature's Best..., Simple, Organic..., Prepared On-Demand."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">About Us (homepage)</label>
+                <textarea
+                  name="homepageAbout"
+                  value={formData.homepageAbout}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Write a brief about section for the homepage"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Categories (comma separated)</label>
+                <input
+                  type="text"
+                  value={(formData.homepageCategories || []).join(", ")}
+                  onChange={(e) => handleCommaList("homepageCategories", e.target.value)}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Flour, Pulses, Edible Oil"
                 />
               </div>
             </div>
@@ -176,7 +259,7 @@ const SiteSettings = () => {
                   type="url"
                   name="logo"
                   value={formData.logo}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="https://example.com/logo.png"
                 />
@@ -187,20 +270,20 @@ const SiteSettings = () => {
                   type="url"
                   name="favicon"
                   value={formData.favicon}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="https://example.com/favicon.ico"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-2">Primary Color</label>
                 <input
                   type="color"
-                  name="primaryColor"
-                  value={formData.primaryColor}
-                  onChange={handleInputChange}
+                  name="theme.primaryColor"
+                  value={formData.theme.primaryColor}
+                  onChange={handleChange}
                   className="w-full h-12 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                 />
               </div>
@@ -208,9 +291,19 @@ const SiteSettings = () => {
                 <label className="block text-sm font-medium text-stone-700 mb-2">Secondary Color</label>
                 <input
                   type="color"
-                  name="secondaryColor"
-                  value={formData.secondaryColor}
-                  onChange={handleInputChange}
+                  name="theme.secondaryColor"
+                  value={formData.theme.secondaryColor}
+                  onChange={handleChange}
+                  className="w-full h-12 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Accent Color</label>
+                <input
+                  type="color"
+                  name="theme.accentColor"
+                  value={formData.theme.accentColor}
+                  onChange={handleChange}
                   className="w-full h-12 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                 />
               </div>
@@ -227,7 +320,7 @@ const SiteSettings = () => {
                   type="url"
                   name="socialMedia.facebook"
                   value={formData.socialMedia.facebook}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="https://facebook.com/yourstore"
                 />
@@ -238,7 +331,7 @@ const SiteSettings = () => {
                   type="url"
                   name="socialMedia.twitter"
                   value={formData.socialMedia.twitter}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="https://twitter.com/yourstore"
                 />
@@ -249,7 +342,7 @@ const SiteSettings = () => {
                   type="url"
                   name="socialMedia.instagram"
                   value={formData.socialMedia.instagram}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="https://instagram.com/yourstore"
                 />
@@ -260,7 +353,7 @@ const SiteSettings = () => {
                   type="url"
                   name="socialMedia.linkedin"
                   value={formData.socialMedia.linkedin}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="https://linkedin.com/company/yourstore"
                 />
@@ -278,7 +371,7 @@ const SiteSettings = () => {
                   type="text"
                   name="seo.metaTitle"
                   value={formData.seo.metaTitle}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="Your Store - Best Products Online"
                 />
@@ -288,7 +381,7 @@ const SiteSettings = () => {
                 <textarea
                   name="seo.metaDescription"
                   value={formData.seo.metaDescription}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   rows={3}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="Description for search engines"
@@ -300,7 +393,7 @@ const SiteSettings = () => {
                   type="text"
                   name="seo.keywords"
                   value={formData.seo.keywords}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="ecommerce, online store, products"
                 />

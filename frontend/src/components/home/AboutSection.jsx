@@ -3,8 +3,12 @@
 import Button from "../ui/Button"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
+import { useSettings } from "../../context/SettingsContext"
 
 export default function AboutSection() {
+  const { settings } = useSettings()
+  const about = settings?.homepageAbout || "Nat-Organics, as the name suggests, stands for Natural and Organic foods..."
+
   return (
     <section className="section-padding" aria-labelledby="home-about-title">
       <div className="container-max" style={{ position: "relative" }}>
@@ -24,24 +28,21 @@ export default function AboutSection() {
               className="font-serif"
               style={{ fontSize: "clamp(24px, 4.5vw, 36px)", marginTop: 0 }}
             >
-              About eKart
+              About {settings?.siteName || "Nat-Organics"}
             </h2>
-            <p style={{ color: "var(--color-muted)", marginTop: 8, maxWidth: 720 }}>
-              We’re building a faster, more delightful way to shop: curated drops, transparent pricing, and
-              planet-conscious picks. Our team blends style and tech to bring you weekly edits that actually matter.
-            </p>
+            <p style={{ color: "var(--color-muted)", marginTop: 8, maxWidth: 720 }}>{about}</p>
             <div className="about-badges" aria-label="Our highlights">
               <span className="badge">
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--color-primary)" }} /> Weekly
-                drops
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--color-primary)" }} /> Organic
+                only
               </span>
               <span className="badge">
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--color-accent)" }} /> Easy
-                returns
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--color-accent)" }} /> Freshly
+                prepared
               </span>
               <span className="badge">
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--color-primary)" }} /> Student
-                perks
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--color-primary)" }} /> No
+                chemicals
               </span>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 16 }}>

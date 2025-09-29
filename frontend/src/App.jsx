@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import { Toaster } from "react-hot-toast"
 import { AnimatePresence } from "framer-motion"
 import { ThemeProvider } from "./context/ThemeContext"
-import GlobalLoader from "./components/ui/GlobalLoader"
 import EntryLoader from "./components/ui/EntryLoader"
 import { useEffect, useState } from "react"
 import TopBarProgress from "./components/ui/TopBarProgress"
@@ -23,6 +22,10 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import About from "./pages/About"
 import Contact from "./pages/Contact"
+import ForgotPassword from "./pages/ForgotPassword"
+import VerifyResetOTP from "./pages/VerifyResetOTP"
+import ResetPassword from "./pages/ResetPassword"
+import VerifyOTP from "./pages/VerifyOTP"
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard"
@@ -82,6 +85,10 @@ function App() {
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Register />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/verify-reset-otp" element={<VerifyResetOTP />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/verify-otp" element={<VerifyOTP />} />
 
                       {/* Protected Routes */}
                       <Route
@@ -155,7 +162,6 @@ function App() {
                 </main>
 
                 <Footer />
-               
               </div>
 
               <Toaster

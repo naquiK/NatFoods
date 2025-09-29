@@ -1,6 +1,7 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from "react"
-import axios from "axios"
+import { settingsAPI } from "../utils/api"
+import logo from "../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
 
 const SettingsContext = createContext()
 
@@ -14,16 +15,24 @@ export const useSettings = () => {
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState({
-    siteName: "NatFoods",
+    siteName: "Nat-Organics",
     siteDescription: "Your premium online shopping destination",
-    logo: null,
-    contactInfo: {},
+    logo: logo,
+    contactInfo: { email: "", phone: "", address: "" },
     socialMedia: {},
     theme: {
-      primaryColor: "#000000",
+      primaryColor: "#0b3d2e",
       secondaryColor: "#f5f5f0",
       accentColor: "#8b7355",
     },
+    homepageTaglines: [
+      "Nature's Best, Delivered to Your Doorstep.",
+      "Simple, Organic Goodness. No Chemicals.",
+      "Prepared On-Demand.",
+    ],
+    homepageAbout:
+      "Nat-Organics, as the name suggests, stands for Natural and Organic foods. We are a team of passionate people who have worked with naturalists and organic harvesters to discover methods, foods, and ingredients that boost energy, health, and nutrition. We're dedicated to helping you and your family achieve a healthy mind and body. We assure you that every order will enrich your nourishment and improve your well-being.",
+    homepageCategories: ["Flour", "Pulses", "Edible Oil"],
   })
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +42,7 @@ export const SettingsProvider = ({ children }) => {
 
   const fetchSettings = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/settings`)
+      const response = await settingsAPI.get()
       setSettings(response.data)
     } catch (error) {
       console.error("Error fetching settings:", error)
@@ -44,7 +53,7 @@ export const SettingsProvider = ({ children }) => {
 
   const updateSettings = async (newSettings) => {
     try {
-      const response = await axios.put(`${import.meta.env.VITE_API_URL}/api/settings`, newSettings)
+      const response = await settingsAPI.update(newSettings)
       setSettings(response.data.settings)
       return { success: true }
     } catch (error) {

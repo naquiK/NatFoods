@@ -109,7 +109,7 @@ const Contact = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
               <h3 className="text-xl font-bold text-stone-900 mb-6">Contact Information</h3>
               <div className="space-y-4">
-                {settings?.contactEmail && (
+                {settings?.contactInfo?.email && (
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mr-4">
                       <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,12 +123,12 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="font-medium text-stone-900">Email</p>
-                      <p className="text-stone-600">{settings.contactEmail}</p>
+                      <p className="text-stone-600">{settings.contactInfo.email}</p>
                     </div>
                   </div>
                 )}
 
-                {settings?.contactPhone && (
+                {settings?.contactInfo?.phone && (
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mr-4">
                       <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,12 +142,12 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="font-medium text-stone-900">Phone</p>
-                      <p className="text-stone-600">{settings.contactPhone}</p>
+                      <p className="text-stone-600">{settings.contactInfo.phone}</p>
                     </div>
                   </div>
                 )}
 
-                {settings?.address && (
+                {settings?.contactInfo?.address && (
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mr-4">
                       <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,7 +167,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="font-medium text-stone-900">Address</p>
-                      <p className="text-stone-600">{settings.address}</p>
+                      <p className="text-stone-600">{settings.contactInfo.address}</p>
                     </div>
                   </div>
                 )}
@@ -213,7 +213,19 @@ const Contact = () => {
                       className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center hover:bg-stone-200 transition-colors"
                     >
                       <svg className="w-5 h-5 text-stone-600" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323C6.001 8.198 7.152 7.708 8.449 7.708s2.448.49 3.323 1.416c.875.875 1.365 2.026 1.365 3.323s-.49 2.448-1.365 3.323c-.875.807-2.026 1.218-3.323 1.218zm7.718-1.297c-.875.875-2.026 1.365-3.323 1.365s-2.448-.49-3.323-1.365c-.875-.875-1.365-2.026-1.365-3.323s.49-2.448 1.365-3.323c.875-.875 2.026-1.365 3.323-1.365s2.448.49 3.323 1.365c.875.875 1.365 2.026 1.365 3.323s-.49 2.448-1.365 3.323z" />
+                        <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323C6.001 8.198 7.152 7.708 8.449 7.708s2.448.49 3.323 1.416c.875.875 1.365 2.026 1.365 3.323s-.49 2.448-1.365 3.323c-.875.875-2.026 1.365-3.323 1.365s-2.448-.49-3.323-1.365c-.875-.875-1.365-2.026-1.365-3.323s.49-2.448 1.365-3.323z" />
+                      </svg>
+                    </a>
+                  )}
+                  {settings.socialMedia.instagram && (
+                    <a
+                      href={settings.socialMedia.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center hover:bg-stone-200 transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-stone-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323C6.001 8.198 7.152 7.708 8.449 7.708s2.448.49 3.323 1.416c.875.875 1.365 2.026 1.365 3.323s-.49 2.448-1.365 3.323z" />
                       </svg>
                     </a>
                   )}

@@ -1,10 +1,11 @@
 const express = require("express")
 const router = express.Router()
 const { upload, cloudinary } = require("../middleware/upload")
-const { verifyToken, isAdmin } = require("../middleware/auth")
+const { verifyToken, admin } = require("../middleware/auth-middleware")
+
 
 // Upload single image
-router.post("/image", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+router.post("/image", verifyToken, admin, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" })
@@ -22,7 +23,7 @@ router.post("/image", verifyToken, isAdmin, upload.single("image"), async (req, 
 })
 
 // Upload multiple images
-router.post("/images", verifyToken, isAdmin, upload.array("images", 10), async (req, res) => {
+router.post("/images", verifyToken, admin, upload.array("images", 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: "No files uploaded" })
@@ -44,7 +45,7 @@ router.post("/images", verifyToken, isAdmin, upload.array("images", 10), async (
 })
 
 // Delete image
-router.delete("/image/:public_id", verifyToken, isAdmin, async (req, res) => {
+router.delete("/image/:public_id", verifyToken, admin, async (req, res) => {
   try {
     const { public_id } = req.params
 

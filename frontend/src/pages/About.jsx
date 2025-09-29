@@ -1,4 +1,6 @@
 import { useSettings } from "../context/SettingsContext"
+import logo from "../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
+
 
 const About = () => {
   const { settings } = useSettings()
@@ -18,10 +20,10 @@ const About = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
           <div>
             <img
-              src="/modern-office-team.png"
+              src={settings?.logo?.url || logo}
               alt="Our team"
-              className="w-full h-80 object-cover rounded-2xl shadow-lg"
-            />
+              className="w-full h-80 object-cover rounded-2xl shadow-lg" 
+            />  
           </div>
           <div>
             <h2 className="text-3xl font-bold text-stone-900 mb-6">Our Story</h2>
@@ -79,12 +81,12 @@ const About = () => {
           </div>
         </div>
 
-        {settings?.address && (
+        {settings?.contactInfo?.address && (
           <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8 text-center">
             <h3 className="text-2xl font-bold text-stone-900 mb-4">Visit Our Store</h3>
-            <p className="text-stone-600 mb-2">{settings.address}</p>
-            {settings.contactPhone && <p className="text-stone-600 mb-2">Phone: {settings.contactPhone}</p>}
-            {settings.contactEmail && <p className="text-stone-600">Email: {settings.contactEmail}</p>}
+            <p className="text-stone-600 mb-2">{settings.contactInfo.address}</p>
+            {settings.contactInfo.phone && <p className="text-stone-600 mb-2">Phone: {settings.contactInfo.phone}</p>}
+            {settings.contactInfo.email && <p className="text-stone-600">Email: {settings.contactInfo.email}</p>}
           </div>
         )}
       </div>

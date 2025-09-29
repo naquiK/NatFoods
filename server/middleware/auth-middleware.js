@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken")
 const crypto = require("crypto")
-const User = require("../models/userModel")
+const User = require("../model/userModel")
 
 // Basic auth middleware with userInfo
 const authMiddleware = async (req, res, next) => {
