@@ -13,7 +13,9 @@ connectDB()
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin:[ process.env.FRONTEND_URL || "http://localhost:5173",
+    "https://nat-foods.vercel.app",  
+    "https://nat-foods-r1oq.vercel.app"],
     credentials: true,
   }),
 )
