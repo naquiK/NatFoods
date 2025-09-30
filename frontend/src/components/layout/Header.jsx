@@ -4,25 +4,11 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  Search,
-  ShoppingBag,
-  User,
-  Menu,
-  X,
-  Sun,
-  Moon,
-  LogOut,
-  Home,
-  Store,
-  Info,
-  Mail,
-} from "lucide-react"
+import { Search, ShoppingBag, User, Menu, X, Sun, Moon, LogOut } from "lucide-react"
 import { useAuth } from "../../context/AuthContext"
 import { useCart } from "../../context/CartContext"
 import { useSettings } from "../../context/SettingsContext"
 import { useTheme } from "../../context/ThemeContext"
-import logo from "../../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -50,7 +36,7 @@ const Header = () => {
     setIsSearchOpen(false)
   }, [location.pathname])
 
-  const handleSearch = e => {
+  const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery)}`)
@@ -65,24 +51,19 @@ const Header = () => {
   const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0)
 
   const navigation = [
-    { name: "Home", href: "/", icon: <Home /> },
-    { name: "Products", href: "/products", icon: <Store /> },
-    { name: "About", href: "/about", icon: <Info /> },
-    { name: "Contact", href: "/contact", icon: <Mail /> },
+    { name: "Home", href: "/" },
+    { name: "Products", href: "/products" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" },
   ]
 
   // --- Animation Variants ---
-  const mobileMenuVariants = {
-    hidden: { x: "100%" },
-    visible: { x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    exit: { x: "100%", transition: { duration: 0.3, ease: "easeInOut" } },
-  }
-  const mobileNavContainerVariants = {
+  const mobileNavVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   }
   const mobileLinkVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: -20 },
     visible: { opacity: 1, y: 0 },
   }
 
@@ -107,7 +88,7 @@ const Header = () => {
               className="flex items-center gap-3 text-2xl font-bold font-serif text-neutral-800 dark:text-white"
             >
               <img
-                src={settings?.logo?.url || logo}
+                src={settings?.logo?.url || "/placeholder-logo.png"}
                 alt={settings?.siteName || "Nat-Organics"}
                 className="h-8 w-auto"
               />
@@ -116,7 +97,7 @@ const Header = () => {
 
             {/* --- Desktop Navigation --- */}
             <nav className="hidden lg:flex items-center gap-4">
-              {navigation.map(item => {
+              {navigation.map((item) => {
                 const isActive = location.pathname === item.href
                 return (
                   <Link
@@ -206,13 +187,13 @@ const Header = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsSearchOpen(false)}
-            className="fixed inset-0 bg-black/50 z-[60] flex items-start justify-center pt-24 px-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-24 px-4"
           >
             <motion.div
               initial={{ scale: 0.9, y: -20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: -20 }}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               className="w-full max-w-xl"
             >
               <form onSubmit={handleSearch} className="relative">
@@ -221,7 +202,7 @@ const Header = () => {
                   type="text"
                   placeholder="What are you looking for?"
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-2xl py-5 pl-14 pr-6 text-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   autoFocus
                 />
@@ -235,77 +216,47 @@ const Header = () => {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            variants={mobileMenuVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="fixed inset-0 bg-gradient-to-br from-violet-500 to-indigo-600 dark:from-neutral-900 dark:to-black z-[60] lg:hidden text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-lg z-50 lg:hidden"
           >
-            <div className="h-full w-full p-6 flex flex-col">
-              {/* Top bar: Logo and Close Button */}
-              <div className="flex justify-between items-center">
-                <Link to="/" className="text-xl font-bold font-serif text-white">
-                  {settings?.siteName || "Nat-Organics"}
-                </Link>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                >
-                  <X size={28} />
-                </button>
-              </div>
-
-              {/* Navigation Links */}
-              <motion.nav
-                variants={mobileNavContainerVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex-grow flex flex-col items-center justify-center -mt-10"
-              >
-                {navigation.map(item => (
-                  <motion.div variants={mobileLinkVariants} key={item.name} className="w-full text-center">
-                    <Link
-                      to={item.href}
-                      className="flex items-center justify-center gap-4 text-3xl font-light py-4 transition-transform hover:scale-105 hover:font-medium"
-                    >
-                      {item.icon}
-                      <span>{item.name}</span>
-                    </Link>
-                  </motion.div>
-                ))}
-              </motion.nav>
-
-              {/* Bottom Actions */}
+            <div className="p-4 flex justify-between items-center border-b border-neutral-200 dark:border-neutral-800 h-20">
+              <Link to="/" className="text-xl font-bold font-serif">
+                {settings?.siteName || "Nat-Organics"}
+              </Link>
+              <button onClick={() => setIsMenuOpen(false)} className="p-2">
+                <X size={24} />
+              </button>
+            </div>
+            <motion.nav variants={mobileNavVariants} initial="hidden" animate="visible" className="p-6 flex flex-col">
+              {navigation.map((item) => (
+                <motion.div variants={mobileLinkVariants} key={item.name}>
+                  <Link to={item.href} className="block text-3xl font-semibold py-3">
+                    {item.name}
+                  </Link>
+                </motion.div>
+              ))}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-                className="mt-auto text-center pb-4"
+                variants={mobileLinkVariants}
+                className="mt-8 pt-8 border-t border-neutral-200 dark:border-neutral-800 space-y-4"
               >
                 {user ? (
-                  <div className="flex items-center justify-center gap-6">
-                    <Link
-                      to="/profile"
-                      className="flex items-center gap-2 text-lg text-white/80 hover:text-white transition"
-                    >
-                      <User size={20} /> My Account
+                  <>
+                    <Link to="/profile" className="flex items-center gap-4 text-xl">
+                      <User /> My Account
                     </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 text-lg text-white/80 hover:text-white transition"
-                    >
-                      <LogOut size={20} /> Logout
+                    <button onClick={handleLogout} className="flex items-center gap-4 text-xl">
+                      <LogOut /> Logout
                     </button>
-                  </div>
+                  </>
                 ) : (
-                  <Link
-                    to="/login"
-                    className="inline-block bg-white text-indigo-600 font-semibold rounded-full px-10 py-4 text-lg transition-transform hover:scale-105 shadow-lg"
-                  >
-                    Login / Sign Up
+                  <Link to="/login" className="flex items-center gap-4 text-xl">
+                    <User /> Login / Sign Up
                   </Link>
                 )}
               </motion.div>
-            </div>
+            </motion.nav>
           </motion.div>
         )}
       </AnimatePresence>

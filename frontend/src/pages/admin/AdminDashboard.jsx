@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../../context/AuthContext"
 import { useSettings } from "../../context/SettingsContext"
-import { api } from "../../utils/api"
+import { adminAPI } from "../../utils/api"
 import LoadingSpinner from "../../components/ui/LoadingSpinner"
+import AdminLayout from "../../components/admin/AdminLayout"
 
 const AdminDashboard = () => {
   const { user } = useAuth()
@@ -19,37 +20,39 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, ordersRes] = await Promise.all([api.get("/admin/stats"), api.get("/admin/orders/recent")])
+      const [statsRes, ordersRes] = await Promise.all([adminAPI.getStats(), adminAPI.getOrders({ page: 1, limit: 5 })])
       setStats(statsRes.data)
-      setRecentOrders(ordersRes.data)
+      setRecentOrders(ordersRes.data?.orders || [])
     } catch (error) {
-      console.error("Error fetching dashboard data:", error)
+      console.error("[v0] Error fetching dashboard data:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) {
+    return (
+      <AdminLayout>
+        <LoadingSpinner />
+      </AdminLayout>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 mb-2">Welcome back, {user?.name}</h1>
-          <p className="text-stone-600">Manage your {settings?.siteName || "eKart"} store</p>
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">Welcome back, {user?.name}</h1>
+          <p className="text-zinc-400">Manage your {settings?.siteName || "NatFoods"} store</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-stone-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-stone-900">${stats?.totalRevenue?.toLocaleString() || "0"}</p>
-              </div>
-              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -59,21 +62,15 @@ const AdminDashboard = () => {
                 </svg>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-emerald-600 font-medium">
-                +{stats?.revenueGrowth || 0}% from last month
-              </span>
-            </div>
+            <p className="text-sm text-zinc-400 mb-1">Total Revenue</p>
+            <p className="text-2xl font-bold text-white">${stats?.totalRevenue?.toLocaleString() || "0"}</p>
+            <p className="text-xs text-emerald-500 mt-2">+12.5% from last month</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-stone-600">Total Orders</p>
-                <p className="text-2xl font-bold text-stone-900">{stats?.totalOrders?.toLocaleString() || "0"}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -83,19 +80,15 @@ const AdminDashboard = () => {
                 </svg>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-blue-600 font-medium">+{stats?.ordersGrowth || 0}% from last month</span>
-            </div>
+            <p className="text-sm text-zinc-400 mb-1">Total Orders</p>
+            <p className="text-2xl font-bold text-white">{stats?.totalOrders?.toLocaleString() || "0"}</p>
+            <p className="text-xs text-blue-500 mt-2">+8.2% from last month</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-stone-600">Total Products</p>
-                <p className="text-2xl font-bold text-stone-900">{stats?.totalProducts?.toLocaleString() || "0"}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -105,19 +98,15 @@ const AdminDashboard = () => {
                 </svg>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-purple-600 font-medium">{stats?.lowStockProducts || 0} low stock</span>
-            </div>
+            <p className="text-sm text-zinc-400 mb-1">Total Products</p>
+            <p className="text-2xl font-bold text-white">{stats?.totalProducts?.toLocaleString() || "0"}</p>
+            <p className="text-xs text-purple-500 mt-2">{stats?.lowStockProducts?.length || 0} low stock</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-stone-600">Total Customers</p>
-                <p className="text-2xl font-bold text-stone-900">{stats?.totalCustomers?.toLocaleString() || "0"}</p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -127,66 +116,64 @@ const AdminDashboard = () => {
                 </svg>
               </div>
             </div>
-            <div className="mt-4">
-              <span className="text-sm text-orange-600 font-medium">
-                +{stats?.customersGrowth || 0}% from last month
-              </span>
-            </div>
+            <p className="text-sm text-zinc-400 mb-1">Total Users</p>
+            <p className="text-2xl font-bold text-white">{stats?.totalUsers?.toLocaleString() || "0"}</p>
+            <p className="text-xs text-orange-500 mt-2">+5.7% from last month</p>
           </div>
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-stone-200">
-            <h2 className="text-lg font-semibold text-stone-900">Recent Orders</h2>
+        <div className="bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-800">
+            <h2 className="text-lg font-semibold text-white">Recent Orders</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-stone-200">
-              <thead className="bg-stone-50">
+            <table className="min-w-full divide-y divide-zinc-800">
+              <thead className="bg-zinc-900/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Order ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase tracking-wider">
                     Date
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-stone-200">
+              <tbody className="divide-y divide-zinc-800">
                 {recentOrders.map((order) => (
-                  <tr key={order._id} className="hover:bg-stone-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">
+                  <tr key={order._id} className="hover:bg-zinc-800/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                       #{order._id.slice(-8)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">
-                      {order.user?.name || "Guest"}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300">
+                      {order.userId?.name || "Guest"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-900">${order.totalAmount}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300">${order.totalAmount}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
                           order.status === "delivered"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-emerald-500/10 text-emerald-500"
                             : order.status === "shipped"
-                              ? "bg-blue-100 text-blue-800"
+                              ? "bg-blue-500/10 text-blue-500"
                               : order.status === "processing"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-stone-100 text-stone-800"
+                                ? "bg-yellow-500/10 text-yellow-500"
+                                : "bg-zinc-700 text-zinc-300"
                         }`}
                       >
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-400">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -196,8 +183,8 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 
-export default AdminDashboard
+export default AdminDashboard 

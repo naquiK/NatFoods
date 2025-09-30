@@ -36,6 +36,8 @@ const userSchema = new mongoose.Schema(
     },
     addresses: [
       {
+        contactName: { type: String, default: "" },
+        contactPhone: { type: String, default: "" },
         street: { type: String, required: true },
         city: { type: String, required: true },
         state: { type: String, required: true },
@@ -47,6 +49,11 @@ const userSchema = new mongoose.Schema(
     isAdmin: {
       type: Boolean,
       default: false,
+    },
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      default: null,
     },
     isVerified: {
       type: Boolean,
@@ -65,5 +72,22 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 )
+
+userSchema.methods.hasPermission = async function (resource, action) {
+  // Super admin has all permissions
+  if (this.isAdmin && !this.role) {
+    return true
+  }
+
+  // If user has a role, check role permissions
+  if (this.role) {
+    await this.populate("role")
+    if (this.role && this.role.permissions && this.role.permissions[resource]) {
+      return this.role.permissions[resource][action] === true
+    }
+  }
+
+  return false
+}
 
 module.exports = mongoose.model("User", userSchema)

@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { api } from "../../utils/api"
 import LoadingSpinner from "../../components/ui/LoadingSpinner"
-import Button from "../../components/ui/Button"
 import ImageUpload from "../../components/admin/ImageUpload"
 import ImageGallery from "../../components/admin/ImageGallery"
+import AdminLayout from "../../components/admin/AdminLayout"
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([])
@@ -30,8 +30,8 @@ const ProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/products")
-      setProducts(response.data)
+      const response = await api.get("/api/admin/products")
+      setProducts(response.data.products || response.data)
     } catch (error) {
       console.error("Error fetching products:", error)
     } finally {
@@ -43,9 +43,9 @@ const ProductManagement = () => {
     e.preventDefault()
     try {
       if (editingProduct) {
-        await api.put(`/admin/products/${editingProduct._id}`, formData)
+        await api.put(`/api/admin/products/${editingProduct._id}`, formData)
       } else {
-        await api.post("/admin/products", formData)
+        await api.post("/api/admin/products", formData)
       }
       fetchProducts()
       resetForm()
@@ -57,7 +57,7 @@ const ProductManagement = () => {
   const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await api.delete(`/admin/products/${productId}`)
+        await api.delete(`/api/admin/products/${productId}`)
         fetchProducts()
       } catch (error) {
         console.error("Error deleting product:", error)
@@ -90,8 +90,8 @@ const ProductManagement = () => {
       category: product.category,
       stock: product.stock,
       images: product.images || [],
-      featured: product.featured || false,
-      onSale: product.onSale || false,
+      featured: product.isFeatured || false,
+      onSale: product.isOnSale || false,
       salePrice: product.salePrice || "",
     })
     setShowModal(true)
@@ -111,67 +111,82 @@ const ProductManagement = () => {
     }))
   }
 
-  if (loading) return <LoadingSpinner />
+  if (loading) {
+    return (
+      <AdminLayout>
+        <LoadingSpinner />
+      </AdminLayout>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-stone-900">Product Management</h1>
-          <Button onClick={() => setShowModal(true)} className="bg-stone-900 hover:bg-stone-800">
-            Add New Product
-          </Button>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">Product Management</h1>
+            <p className="text-zinc-400">Manage your product catalog</p>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors"
+          >
+            Add Product
+          </button>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map((product) => (
-            <div key={product._id} className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-              <div className="aspect-w-16 aspect-h-9">
+            <div key={product._id} className="bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden">
+              <div className="aspect-video">
                 <img
-                  src={product.images?.[0] || "/placeholder.svg?height=200&width=300&query=product"}
+                  src={product.images?.[0]?.url || "/placeholder.svg?height=200&width=300&query=product"}
                   alt={product.name}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-full object-cover"
                 />
               </div>
-              <div className="p-6">
+              <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-stone-900 line-clamp-2">{product.name}</h3>
-                  <div className="flex space-x-1">
-                    {product.featured && (
-                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Featured</span>
+                  <h3 className="text-base font-semibold text-white line-clamp-1">{product.name}</h3>
+                  <div className="flex gap-1">
+                    {product.isFeatured && (
+                      <span className="bg-yellow-500/10 text-yellow-500 text-xs px-2 py-0.5 rounded-full">
+                        Featured
+                      </span>
                     )}
-                    {product.onSale && (
-                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Sale</span>
+                    {product.isOnSale && (
+                      <span className="bg-red-500/10 text-red-500 text-xs px-2 py-0.5 rounded-full">Sale</span>
                     )}
                   </div>
                 </div>
-                <p className="text-stone-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-2">
-                    {product.onSale ? (
+                <p className="text-zinc-400 text-sm mb-3 line-clamp-2">{product.description}</p>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {product.isOnSale ? (
                       <>
-                        <span className="text-lg font-bold text-red-600">${product.salePrice}</span>
-                        <span className="text-sm text-stone-500 line-through">${product.price}</span>
+                        <span className="text-lg font-bold text-emerald-500">${product.salePrice}</span>
+                        <span className="text-sm text-zinc-500 line-through">${product.price}</span>
                       </>
                     ) : (
-                      <span className="text-lg font-bold text-stone-900">${product.price}</span>
+                      <span className="text-lg font-bold text-white">${product.price}</span>
                     )}
                   </div>
-                  <span className="text-sm text-stone-500">Stock: {product.stock}</span>
+                  <span className="text-sm text-zinc-400">Stock: {product.stock}</span>
                 </div>
-                <div className="flex space-x-2">
-                  <Button onClick={() => handleEdit(product)} variant="outline" size="sm" className="flex-1">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="flex-1 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded text-sm font-medium transition-colors"
+                  >
                     Edit
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={() => handleDelete(product._id)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                    className="flex-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded text-sm font-medium transition-colors"
                   >
                     Delete
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -180,100 +195,100 @@ const ProductManagement = () => {
 
         {/* Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+            <div className="bg-zinc-900 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-stone-900 mb-6">
+                <h2 className="text-2xl font-bold text-white mb-6">
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-2">Product Name</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Product Name</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-2">Description</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Description</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       rows={3}
-                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-2">Price</label>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Price</label>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                        className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-2">Stock</label>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Stock</label>
                       <input
                         type="number"
                         value={formData.stock}
                         onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                        className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                        className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-2">Category</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Category</label>
                     <input
                       type="text"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       required
                     />
                   </div>
-                  <div className="flex items-center space-x-6">
+                  <div className="flex items-center gap-6">
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={formData.featured}
                         onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                        className="rounded border-stone-300 text-stone-600 focus:ring-stone-500"
+                        className="rounded border-zinc-700 bg-zinc-800 text-emerald-500 focus:ring-emerald-500"
                       />
-                      <span className="ml-2 text-sm text-stone-700">Featured Product</span>
+                      <span className="ml-2 text-sm text-zinc-300">Featured Product</span>
                     </label>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={formData.onSale}
                         onChange={(e) => setFormData({ ...formData, onSale: e.target.checked })}
-                        className="rounded border-stone-300 text-stone-600 focus:ring-stone-500"
+                        className="rounded border-zinc-700 bg-zinc-800 text-emerald-500 focus:ring-emerald-500"
                       />
-                      <span className="ml-2 text-sm text-stone-700">On Sale</span>
+                      <span className="ml-2 text-sm text-zinc-300">On Sale</span>
                     </label>
                   </div>
                   {formData.onSale && (
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-2">Sale Price</label>
+                      <label className="block text-sm font-medium text-zinc-300 mb-2">Sale Price</label>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.salePrice}
                         onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-                        className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                        className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       />
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-2">Product Images</label>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Product Images</label>
                     <ImageUpload onUpload={handleImageUpload} multiple={true} accept="image/*" />
                     {formData.images.length > 0 && (
                       <div className="mt-4">
@@ -281,13 +296,20 @@ const ProductManagement = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex justify-end space-x-4 pt-6">
-                    <Button type="button" variant="outline" onClick={resetForm}>
+                  <div className="flex justify-end gap-3 pt-6">
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors"
+                    >
                       Cancel
-                    </Button>
-                    <Button type="submit" className="bg-stone-900 hover:bg-stone-800">
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors"
+                    >
                       {editingProduct ? "Update Product" : "Add Product"}
-                    </Button>
+                    </button>
                   </div>
                 </form>
               </div>
@@ -295,7 +317,7 @@ const ProductManagement = () => {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 

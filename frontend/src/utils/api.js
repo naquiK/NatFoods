@@ -45,6 +45,13 @@ export const authAPI = {
   updateProfile: (data) => api.put("/api/auth/profile", data),
 }
 
+export const addressAPI = {
+  add: (data) => api.post("/api/auth/addresses", data),
+  update: (id, data) => api.put(`/api/auth/addresses/${id}`, data),
+  remove: (id) => api.delete(`/api/auth/addresses/${id}`),
+  setDefault: (id) => api.put(`/api/auth/addresses/${id}/default`),
+}
+
 export const productsAPI = {
   getAll: (params) => api.get("/api/products", { params }),
   getById: (id) => api.get(`/api/products/${id}`),

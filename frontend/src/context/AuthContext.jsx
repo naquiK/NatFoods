@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
           const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/profile`)
           setUser(response.data)
         } catch (error) {
-          console.error("Auth check failed:", error)
+          console.error("[v0] Auth check failed:", error)
           logout()
         }
       }
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null)
     setToken(null)
-    localStorage.removeItem("token") 
+    localStorage.removeItem("token")
     delete axios.defaults.headers.common["Authorization"]
     toast.success("Logged out successfully")
   }
@@ -107,6 +107,13 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const refreshProfile = async () => {
+    if (!token) return
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/profile`)
+    setUser(response.data)
+    return response.data
+  }
+
   const value = {
     user,
     loading,
@@ -114,6 +121,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    refreshProfile,
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
   }

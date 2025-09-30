@@ -1,7 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from "react"
 import { settingsAPI } from "../utils/api"
-import logo from "../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
 
 const SettingsContext = createContext()
 
@@ -17,7 +16,7 @@ export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState({
     siteName: "Nat-Organics",
     siteDescription: "Your premium online shopping destination",
-    logo: logo,
+    logo: null,
     contactInfo: { email: "", phone: "", address: "" },
     socialMedia: {},
     theme: {

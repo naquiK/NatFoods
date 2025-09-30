@@ -22,7 +22,7 @@ const ImageUpload = ({ onUpload, multiple = false, accept = "image/*" }) => {
           formData.append("images", file)
         })
 
-        const response = await api.post("/upload/images", formData, {
+        const response = await api.post("/api/upload/images", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         })
 
@@ -32,7 +32,7 @@ const ImageUpload = ({ onUpload, multiple = false, accept = "image/*" }) => {
       } else {
         formData.append("image", files[0])
 
-        const response = await api.post("/upload/image", formData, {
+        const response = await api.post("/api/upload/image", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         })
 

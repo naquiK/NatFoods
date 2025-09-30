@@ -438,7 +438,6 @@ const getInfo = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" })
     }
 
-    // Return plain user object so clients can do setUser(response.data)
     return res.status(200).json({
       id: u._id,
       name: u.name,
@@ -446,6 +445,17 @@ const getInfo = async (req, res) => {
       phone: u.phone,
       role: u.isAdmin ? "admin" : "user",
       profilePicture: u.profilePic?.url,
+      addresses: (u.addresses || []).map((a) => ({
+        id: a._id,
+        contactName: a.contactName || "",
+        contactPhone: a.contactPhone || "",
+        street: a.street,
+        city: a.city,
+        state: a.state,
+        zip: a.zip,
+        country: a.country,
+        isDefault: !!a.isDefault,
+      })),
     })
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message })
@@ -498,19 +508,27 @@ const uploadProfilePicture = async (req, res) => {
 // Add new address
 const addAddress = async (req, res) => {
   try {
-    const { street, city, state, zip, country, isDefault } = req.body
+    const { contactName, contactPhone, street, city, state, zip, country, isDefault } = req.body
 
     const user = await User.findById(req.user.id)
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" })
     }
 
-    // If new address is set as default, unset previous default
     if (isDefault) {
       user.addresses.forEach((addr) => (addr.isDefault = false))
     }
 
-    user.addresses.push({ street, city, state, zip, country, isDefault })
+    user.addresses.push({
+      contactName: contactName || "",
+      contactPhone: contactPhone || "",
+      street,
+      city,
+      state,
+      zip,
+      country,
+      isDefault: !!isDefault,
+    })
     await user.save()
 
     res.status(201).json({ success: true, message: "Address added successfully", addresses: user.addresses })
@@ -524,7 +542,7 @@ const addAddress = async (req, res) => {
 const updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params
-    const { street, city, state, zip, country, isDefault } = req.body
+    const { contactName, contactPhone, street, city, state, zip, country, isDefault } = req.body
 
     const user = await User.findById(req.user.id)
     if (!user) {
@@ -536,19 +554,20 @@ const updateAddress = async (req, res) => {
       return res.status(404).json({ success: false, message: "Address not found" })
     }
 
-    // If updated address is set as default, unset previous default
     if (isDefault) {
       user.addresses.forEach((addr) => (addr.isDefault = false))
     }
 
     user.addresses[addressIndex] = {
       ...user.addresses[addressIndex],
-      street: street || user.addresses[addressIndex].street,
-      city: city || user.addresses[addressIndex].city,
-      state: state || user.addresses[addressIndex].state,
-      zip: zip || user.addresses[addressIndex].zip,
-      country: country || user.addresses[addressIndex].country,
-      isDefault: isDefault, // Explicitly set isDefault
+      contactName: contactName ?? user.addresses[addressIndex].contactName,
+      contactPhone: contactPhone ?? user.addresses[addressIndex].contactPhone,
+      street: street ?? user.addresses[addressIndex].street,
+      city: city ?? user.addresses[addressIndex].city,
+      state: state ?? user.addresses[addressIndex].state,
+      zip: zip ?? user.addresses[addressIndex].zip,
+      country: country ?? user.addresses[addressIndex].country,
+      isDefault: isDefault ?? user.addresses[addressIndex].isDefault,
     }
     await user.save()
 
@@ -566,7 +585,10 @@ const deleteAddress = async (req, res) => {
 
     const user = await User.findById(req.user.id)
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" })
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      })
     }
 
     const initialLength = user.addresses.length
@@ -581,7 +603,11 @@ const deleteAddress = async (req, res) => {
     res.status(200).json({ success: true, message: "Address deleted successfully", addresses: user.addresses })
   } catch (error) {
     console.error("Delete address error:", error)
-    res.status(500).json({ success: false, message: "Failed to delete address", error: error.message })
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete address",
+      error: error.message,
+    })
   }
 }
 

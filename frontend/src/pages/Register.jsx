@@ -20,7 +20,7 @@ const Register = () => {
   const [errors, setErrors] = useState({})
 
   const { register, isAuthenticated } = useAuth()
-  const navigate = useNavigate() 
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (isAuthenticated) {

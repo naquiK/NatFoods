@@ -1,6 +1,4 @@
 import { useSettings } from "../context/SettingsContext"
-import logo from "../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
-
 
 const About = () => {
   const { settings } = useSettings()
@@ -20,10 +18,10 @@ const About = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
           <div>
             <img
-              src={settings?.logo?.url || logo}
+              src="/modern-office-team.png"
               alt="Our team"
-              className="w-full h-80 object-cover rounded-2xl shadow-lg" 
-            />  
+              className="w-full h-80 object-cover rounded-2xl shadow-lg"
+            />
           </div>
           <div>
             <h2 className="text-3xl font-bold text-stone-900 mb-6">Our Story</h2>

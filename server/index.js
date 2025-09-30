@@ -31,6 +31,7 @@ app.use("/api/cart", require("./router/cartRoute"))
 app.use("/api/orders", require("./router/orderRoute")) 
 app.use("/api/settings", require("./router/settingsRoute"))
 app.use("/api/upload", require("./router/uploadRoute")) // Added upload routes for Cloudinary integration
+app.use("/api/roles", roleRoute) // Added role management routes
 
 // Health check
 app.get("/api/health", (req, res) => {

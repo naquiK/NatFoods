@@ -127,7 +127,7 @@ function App() {
                       />
                       <Route
                         path="/admin/products"
-                        element={ 
+                        element={
                           <AdminRoute>
                             <ProductManagement />
                           </AdminRoute>
