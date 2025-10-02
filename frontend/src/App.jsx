@@ -33,6 +33,7 @@ import ProductManagement from "./pages/admin/ProductManagement"
 import AdminOrders from "./pages/admin/Orders"
 import AdminUsers from "./pages/admin/Users"
 import SiteSettings from "./pages/admin/SiteSettings"
+import Roles from "./pages/admin/Roles"
 
 // Context Providers
 import { AuthProvider } from "./context/AuthContext"
@@ -142,10 +143,30 @@ function App() {
                         }
                       />
                       <Route
+                        path="/admin/users"
+                        element={
+                          <AdminRoute>
+                            <AdminUsers />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
                         path="/admin/customers"
                         element={
                           <AdminRoute>
                             <AdminUsers />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/roles"
+                        element={
+                          <AdminRoute>
+                            {/*
+                              Roles page to manage role CRUD and permissions.
+                              Uses fine-grained PermissionRoute inside the page.
+                            */}
+                            <Roles />
                           </AdminRoute>
                         }
                       />

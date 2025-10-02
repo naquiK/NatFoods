@@ -16,6 +16,9 @@ const {
   forgetPasswordOTP,
   verifyResetOtp,
   resetPassword,
+  getWishlist, // import
+  addToWishlist, // import
+  removeFromWishlist, // import
 } = require("../controllers/user-Conntroller")
 
 // Public routes
@@ -35,5 +38,10 @@ router.post("/addresses", authMiddleware, addAddress)
 router.put("/addresses/:addressId", authMiddleware, updateAddress)
 router.delete("/addresses/:addressId", authMiddleware, deleteAddress)
 router.put("/addresses/:addressId/default", authMiddleware, setDefaultAddress)
+
+// Wishlist routes
+router.get("/wishlist", authMiddleware, getWishlist)
+router.post("/wishlist/:productId", authMiddleware, addToWishlist)
+router.delete("/wishlist/:productId", authMiddleware, removeFromWishlist)
 
 module.exports = router

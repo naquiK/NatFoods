@@ -53,24 +53,19 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (!validateForm()) {
       return
     }
-
     setLoading(true)
-
     const result = await register({
       name: formData.name,
       email: formData.email,
       password: formData.password,
       phone: formData.phone,
     })
-
-    if (result.success) {
-      navigate("/")
+    if (result.success && result.userId) {
+      navigate("/verify-otp", { state: { userId: result.userId } })
     }
-
     setLoading(false)
   }
 

@@ -306,6 +306,10 @@ const login = async (req, res) => {
     // Generate token
     const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "7d" })
 
+    await user.populate("role")
+    const roleName = user.role?.name || null
+    const permissions = user.role?.permissions || null
+
     res.json({
       message: "Login successful",
       token,
@@ -314,12 +318,53 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.isAdmin ? "admin" : "user",
+        isAdmin: user.isAdmin === true,
+        roleName,
+        permissions, // pass full permission object for fine-grained checks
         profilePicture: user.profilePic?.url,
       },
     })
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+// Get User Info
+const getInfo = async (req, res) => {
+  try {
+    const u = req.user
+    if (!u) {
+      return res.status(401).json({ success: false, message: "Unauthorized" })
+    }
+
+    await u.populate("role")
+    const roleName = u.role?.name || null
+    const permissions = u.role?.permissions || null
+
+    return res.status(200).json({
+      id: u._id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      isAdmin: u.isAdmin === true,
+      roleName,
+      permissions,
+      profilePicture: u.profilePic?.url,
+      addresses: (u.addresses || []).map((a) => ({
+        id: a._id,
+        contactName: a.contactName || "",
+        contactPhone: a.contactPhone || "",
+        street: a.street,
+        city: a.city,
+        state: a.state,
+        zip: a.zip,
+        country: a.country,
+        isDefault: !!a.isDefault,
+      })),
+      wishlist: (u.wishlist || []).map((id) => id?.toString?.() || id),
+    })
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -427,38 +472,6 @@ const changePassword = async (req, res) => {
       success: false,
       message: error.message,
     })
-  }
-}
-
-// Get User Info
-const getInfo = async (req, res) => {
-  try {
-    const u = req.user
-    if (!u) {
-      return res.status(401).json({ success: false, message: "Unauthorized" })
-    }
-
-    return res.status(200).json({
-      id: u._id,
-      name: u.name,
-      email: u.email,
-      phone: u.phone,
-      role: u.isAdmin ? "admin" : "user",
-      profilePicture: u.profilePic?.url,
-      addresses: (u.addresses || []).map((a) => ({
-        id: a._id,
-        contactName: a.contactName || "",
-        contactPhone: a.contactPhone || "",
-        street: a.street,
-        city: a.city,
-        state: a.state,
-        zip: a.zip,
-        country: a.country,
-        isDefault: !!a.isDefault,
-      })),
-    })
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message })
   }
 }
 
@@ -656,6 +669,46 @@ const setDefaultAddress = async (req, res) => {
   }
 }
 
+// Wishlist handlers
+const getWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).populate("wishlist", "name price images stock")
+    if (!user) return res.status(404).json({ success: false, message: "User not found" })
+    res.json({ success: true, wishlist: user.wishlist })
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message })
+  }
+}
+
+const addToWishlist = async (req, res) => {
+  try {
+    const { productId } = req.params
+    const user = await User.findById(req.user.id)
+    if (!user) return res.status(404).json({ success: false, message: "User not found" })
+    const exists = user.wishlist?.some((id) => id.toString() === productId)
+    if (!exists) {
+      user.wishlist = [...(user.wishlist || []), productId]
+      await user.save()
+    }
+    res.json({ success: true, message: "Added to wishlist", wishlist: user.wishlist })
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message })
+  }
+}
+
+const removeFromWishlist = async (req, res) => {
+  try {
+    const { productId } = req.params
+    const user = await User.findById(req.user.id)
+    if (!user) return res.status(404).json({ success: false, message: "User not found" })
+    user.wishlist = (user.wishlist || []).filter((id) => id.toString() !== productId)
+    await user.save()
+    res.json({ success: true, message: "Removed from wishlist", wishlist: user.wishlist })
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message })
+  }
+}
+
 module.exports = {
   register,
   optVerification,
@@ -672,4 +725,7 @@ module.exports = {
   setDefaultAddress,
   verifyResetOtp,
   resetPassword,
+  getWishlist,
+  addToWishlist,
+  removeFromWishlist,
 }

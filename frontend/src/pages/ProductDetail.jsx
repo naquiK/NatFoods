@@ -1,9 +1,9 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useParams, Link } from "react-router-dom"
+import { useParams, Link, useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import { Star, ShoppingBag, Heart, Minus, Plus, Truck, Shield, RotateCcw, Sparkles, Award, Users } from "lucide-react"
-import { productsAPI } from "../utils/api"
+import { productsAPI, api } from "../utils/api"
 import { useCart } from "../context/CartContext"
 import { useAuth } from "../context/AuthContext"
 import LoadingSpinner from "../components/ui/LoadingSpinner"
@@ -12,6 +12,7 @@ import toast from "react-hot-toast"
 
 const ProductDetail = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -19,6 +20,7 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState("description")
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" })
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [wishlisted, setWishlisted] = useState(false)
 
   const { addToCart } = useCart()
   const { user, isAuthenticated } = useAuth()
@@ -38,6 +40,10 @@ const ProductDetail = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    setWishlisted(Array.isArray(user?.wishlist) && product ? user.wishlist.includes(product?._id) : false)
+  }, [user, product])
 
   const handleAddToCart = () => {
     if (product) {
@@ -70,6 +76,32 @@ const ProductDetail = () => {
     } finally {
       setSubmittingReview(false)
     }
+  }
+
+  const toggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to use wishlist")
+      return
+    }
+    try {
+      if (wishlisted) {
+        await api.delete(`/api/auth/wishlist/${product._id}`)
+        setWishlisted(false)
+        toast.success("Removed from wishlist")
+      } else {
+        await api.post(`/api/auth/wishlist/${product._id}`)
+        setWishlisted(true)
+        toast.success("Added to wishlist")
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Wishlist action failed")
+    }
+  }
+
+  const buyNow = (product, quantity) => {
+    // Implement buy now logic here
+    addToCart(product, quantity)
+    navigate("/cart")
   }
 
   if (loading) {
@@ -202,9 +234,7 @@ const ProductDetail = () => {
                       <Star
                         key={i}
                         size={20}
-                        className={`${
-                          i < Math.floor(product.averageRating) ? "text-yellow-400 fill-current" : "text-gray-300"
-                        }`}
+                        className={`${i < Math.floor(product.averageRating) ? "text-yellow-400 fill-current" : "text-gray-300"}`}
                       />
                     ))}
                   </div>
@@ -218,13 +248,13 @@ const ProductDetail = () => {
               <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-slate-800 dark:to-purple-900 rounded-2xl p-6">
                 <div className="flex items-center space-x-4">
                   <span className="text-4xl font-bold text-violet-600 dark:text-violet-400">
-                    ${product.isOnSale && product.salePrice ? product.salePrice : product.price}
+                    ₹{product.isOnSale && product.salePrice ? product.salePrice : product.price}
                   </span>
                   {product.isOnSale && product.salePrice && (
                     <>
-                      <span className="text-2xl text-gray-400 line-through">${product.price}</span>
+                      <span className="text-2xl text-gray-400 line-through">₹{product.price}</span>
                       <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 text-sm font-bold rounded-full shadow-lg">
-                        SAVE ${(product.price - product.salePrice).toFixed(2)}
+                        SAVE ₹{(product.price - product.salePrice).toFixed(2)}
                       </span>
                     </>
                   )}
@@ -305,8 +335,21 @@ const ProductDetail = () => {
                       Add to Cart
                     </Button>
                     <Button
+                      onClick={() => {
+                        buyNow(product, quantity)
+                      }}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      Buy Now
+                    </Button>
+                    <Button
                       variant="secondary"
-                      className="bg-white/80 dark:bg-slate-700/80 border-2 border-pink-200 dark:border-pink-700 hover:border-pink-500 text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl px-6 py-4 transition-all duration-200"
+                      onClick={toggleWishlist}
+                      className={`bg-white/80 dark:bg-slate-700/80 border-2 ${
+                        wishlisted
+                          ? "border-pink-500 text-pink-600 dark:text-pink-400"
+                          : "border-pink-200 dark:border-pink-700"
+                      } hover:border-pink-500 text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-xl px-6 py-4 transition-all duration-200`}
                     >
                       <Heart size={20} />
                     </Button>
@@ -318,7 +361,7 @@ const ProductDetail = () => {
               <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-slate-800 dark:to-teal-900 rounded-2xl p-6 space-y-4">
                 <div className="flex items-center space-x-3 text-green-700 dark:text-green-300">
                   <Truck size={20} className="text-green-500" />
-                  <span className="font-medium">Free shipping on orders over $50</span>
+                  <span className="font-medium">Free shipping on orders over ₹50</span>
                 </div>
                 <div className="flex items-center space-x-3 text-blue-700 dark:text-blue-300">
                   <Shield size={20} className="text-blue-500" />
@@ -404,9 +447,7 @@ const ProductDetail = () => {
                                 className="text-3xl transition-all duration-200 hover:scale-110"
                               >
                                 <Star
-                                  className={`${
-                                    star <= reviewForm.rating ? "text-yellow-400 fill-current" : "text-gray-300"
-                                  }`}
+                                  className={`${star <= reviewForm.rating ? "text-yellow-400 fill-current" : "text-gray-300"}`}
                                 />
                               </button>
                             ))}

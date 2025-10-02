@@ -63,7 +63,7 @@ const productSchema = new mongoose.Schema(
     },
     brand: {
       type: String,
-      required: [true, "Product brand is required"],
+      required: false,
       trim: true,
       maxlength: [50, "Brand name cannot exceed 50 characters"],
     },
@@ -90,6 +90,12 @@ const productSchema = new mongoose.Schema(
       of: String,
       default: {},
     },
+    inBox: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     features: [
       {
         type: String,

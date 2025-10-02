@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext"
 import { useCart } from "../../context/CartContext"
 import { useSettings } from "../../context/SettingsContext"
 import { useTheme } from "../../context/ThemeContext"
+import logo from "../../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -88,8 +89,8 @@ const Header = () => {
               className="flex items-center gap-3 text-2xl font-bold font-serif text-neutral-800 dark:text-white"
             >
               <img
-                src={settings?.logo?.url || "/placeholder-logo.png"}
-                alt={settings?.siteName || "Nat-Organics"}
+                src={settings?.logo?.url || logo}
+                alt={settings?.siteName || "Nat-Organics"} 
                 className="h-8 w-auto"
               />
               <span className="hidden sm:inline">{settings?.siteName || "Nat-Organics"}</span>

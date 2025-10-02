@@ -114,6 +114,18 @@ export const AuthProvider = ({ children }) => {
     return response.data
   }
 
+  const hasPermission = (resource, action = "view") => {
+    try {
+      if (user?.isAdmin === true) return true
+
+      const perms = user?.role?.permissions || user?.permissions
+      if (!perms) return false
+      return perms?.[resource]?.[action] === true
+    } catch {
+      return false
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -123,7 +135,16 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     refreshProfile,
     isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
+    isAdmin: user?.isAdmin === true || user?.roleName === "Admin",
+    isModerator:
+      user?.roleName === "Moderator" ||
+      (user?.permissions && user.permissions.dashboard && user.permissions.dashboard.view === true),
+    isStaff:
+      user?.isAdmin === true ||
+      user?.roleName === "Admin" ||
+      user?.roleName === "Moderator" ||
+      (user?.permissions && user.permissions.dashboard && user.permissions.dashboard.view === true),
+    hasPermission, // expose fine-grained permission check
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

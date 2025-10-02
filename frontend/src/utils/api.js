@@ -85,5 +85,11 @@ export const settingsAPI = {
   },
 }
 
+export const wishlistAPI = {
+  get: () => api.get("/api/auth/wishlist"),
+  add: (productId) => api.post(`/api/auth/wishlist/${productId}`),
+  remove: (productId) => api.delete(`/api/auth/wishlist/${productId}`),
+}
+
 export { api }
 export default api

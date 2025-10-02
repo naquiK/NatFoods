@@ -13,18 +13,10 @@ const upload = require("../middleware/multer-middleware")
 router.use(authMiddleware, adminMiddleware)
 
 // Dashboard stats
-const Role = require("../model/role-model") // Add this import at the top
-
 router.get("/stats", checkPermission("dashboard", "view"), async (req, res) => {
   try {
-    // Find the ObjectId for the "user" role
-    const userRole = await Role.findOne({ name: "user" })
-    const userRoleId = userRole ? userRole._id : null
-
     const totalProducts = await Product.countDocuments({ isActive: true })
-    const totalUsers = userRoleId
-      ? await User.countDocuments({ role: userRoleId })
-      : 0
+    const totalUsers = await User.countDocuments({ role: "user" })
     const totalOrders = await Order.countDocuments()
     const totalRevenue = await Order.aggregate([
       { $match: { status: "delivered" } },

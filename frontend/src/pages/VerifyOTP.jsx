@@ -15,7 +15,7 @@ const VerifyOTP = () => {
   const [timeLeft, setTimeLeft] = useState(600) // 10 minutes
   const location = useLocation()
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { setAuthToken } = useAuth()
   const userId = location.state?.userId
 
   useEffect(() => {
@@ -69,11 +69,14 @@ const VerifyOTP = () => {
 
     setLoading(true)
     try {
-      const response = await api.post(`/auth/verify-otp/${userId}`, {
+      const response = await api.post(`/api/auth/verify-otp/${userId}`, {
         otp: otpString,
       })
-      toast.success(response.data.message)
-      login(response.data.token, response.data.user)
+      toast.success(response.data?.message || "Verification successful")
+      const token = response.data?.data?.token
+      if (token) {
+        await setAuthToken(token)
+      }
       navigate("/")
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid OTP")
@@ -83,17 +86,7 @@ const VerifyOTP = () => {
   }
 
   const handleResend = async () => {
-    setResendLoading(true)
-    try {
-      await api.post(`/auth/resend-otp/${userId}`)
-      toast.success("New OTP sent to your email")
-      setTimeLeft(600)
-      setOtp(["", "", "", "", "", ""])
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to resend OTP")
-    } finally {
-      setResendLoading(false)
-    }
+    toast("Resend not available yet. Please wait a minute and check your email/spam.", { icon: "ℹ️" })
   }
 
   const formatTime = (seconds) => {

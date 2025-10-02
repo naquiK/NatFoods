@@ -49,7 +49,7 @@ router.post("/", async (req, res) => {
       await product.reduceStock(item.quantity)
     }
 
-    const shippingPrice = itemsPrice > 500 ? 0 : 50 // Free shipping over $500
+    const shippingPrice = itemsPrice > 500 ? 0 : 50 // Free shipping over rs500
     const taxPrice = itemsPrice * 0.1 // 10% tax
     const totalAmount = itemsPrice + shippingPrice + taxPrice
 
@@ -62,6 +62,7 @@ router.post("/", async (req, res) => {
       shippingPrice,
       taxPrice,
       totalAmount,
+      paymentStatus: paymentMethod === "razorpay" ? "paid" : "pending",
     })
 
     await order.save()

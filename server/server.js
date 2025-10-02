@@ -13,7 +13,9 @@ connectDB()
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: [process.env.FRONTEND_URL || "http://localhost:5173",
+      "https://nat-foods.vercel.app/"
+    ],
     credentials: true,
   }),
 )
@@ -27,15 +29,16 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 app.use("/api/auth", require("./router/userRoute"))
 app.use("/api/products", require("./router/productRoute"))
 app.use("/api/admin", require("./router/adminRoute"))
-app.use("/api/cart", require("./router/cartRoute")) 
-app.use("/api/orders", require("./router/orderRoute")) 
+app.use("/api/cart", require("./router/cartRoute"))
+app.use("/api/orders", require("./router/orderRoute"))
 app.use("/api/settings", require("./router/settingsRoute"))
 app.use("/api/upload", require("./router/uploadRoute")) // Added upload routes for Cloudinary integration
+// app.use("/api/payment", require("./router/paymentRoute")) // Added payment routes
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ message: "Server is running!", timestamp: new Date().toISOString() })
-}) 
+})
 
 // Error handling middleware
 app.use((err, req, res, next) => {

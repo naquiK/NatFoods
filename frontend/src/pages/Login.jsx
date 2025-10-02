@@ -14,7 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, isStaff } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -22,9 +22,13 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true })
+      if (isStaff) {
+        navigate("/admin/dashboard", { replace: true })
+      } else {
+        navigate(from, { replace: true })
+      }
     }
-  }, [isAuthenticated, navigate, from])
+  }, [isAuthenticated, isStaff, navigate, from])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -159,6 +163,16 @@ const Login = () => {
                   Sign up
                 </Link>
               </p>
+              {isAuthenticated && isStaff && (
+                <div className="mt-4">
+                  <Link
+                    to="/admin/dashboard"
+                    className="inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold shadow hover:shadow-md transition"
+                  >
+                    Go to Admin Dashboard
+                  </Link>
+                </div>
+              )}
             </div>
 
             <div className="absolute -top-2 -right-2 w-4 h-4 bg-gradient-to-r from-pink-400 to-orange-400 rounded-full opacity-60"></div>

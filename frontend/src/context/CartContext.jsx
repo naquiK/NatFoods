@@ -104,6 +104,26 @@ export const CartProvider = ({ children }) => {
     return cartItems.reduce((total, item) => total + item.quantity, 0)
   }
 
+  const buyNow = (product, quantity = 1) => {
+    setCartItems(() => {
+      const qty = Math.min(quantity, product.stock || quantity)
+      return [
+        {
+          id: product._id,
+          name: product.name,
+          price: product.effectivePrice || product.salePrice || product.price,
+          image: product.images?.[0]?.url || "/placeholder.svg",
+          quantity: qty,
+          stock: product.stock ?? 9999,
+        },
+      ]
+    })
+    // persist immediately
+    setTimeout(() => {
+      window.location.href = "/checkout"
+    }, 0)
+  }
+
   const value = {
     cartItems,
     loading,
@@ -113,6 +133,7 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getCartTotal,
     getCartItemsCount,
+    buyNow, // expose buyNow
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

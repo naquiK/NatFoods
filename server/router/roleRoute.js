@@ -167,8 +167,6 @@ router.post("/initialize", adminMiddleware, async (req, res) => {
   try {
     await Role.getAdminRole()
     await Role.getModeratorRole()
-    await Role.getOrderManagementRole()
-    await Role.getProductManagementRole()
 
     res.json({ success: true, message: "Default roles initialized successfully" })
   } catch (error) {

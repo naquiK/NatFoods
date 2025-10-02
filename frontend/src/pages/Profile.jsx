@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext"
 import { api, addressAPI } from "../utils/api"
 import Button from "../components/ui/Button"
 import LoadingSpinner from "../components/ui/LoadingSpinner"
-import { Link } from "react-router-dom"
 
 const Profile = () => {
   const { user, refreshProfile } = useAuth()
@@ -57,21 +56,14 @@ const Profile = () => {
         <div className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
           {/* Profile Header */}
           <div className="bg-stone-900 px-6 py-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 bg-stone-700 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">{user?.name?.charAt(0)?.toUpperCase() || "U"}</span>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">{user?.name}</h1>
-                  <p className="text-stone-300">{user?.email}</p>
-                </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-20 h-20 bg-stone-700 rounded-full flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">{user?.name?.charAt(0)?.toUpperCase() || "U"}</span>
               </div>
-              {(user?.isAdmin || user?.role) && (
-                <Link to="/admin">
-                  <Button className="bg-stone-800 hover:bg-stone-700">Admin Panel</Button>
-                </Link>
-              )}
+              <div>
+                <h1 className="text-2xl font-bold text-white">{user?.name}</h1>
+                <p className="text-stone-300">{user?.email}</p>
+              </div>
             </div>
           </div>
 
@@ -108,19 +100,6 @@ const Profile = () => {
               >
                 Addresses
               </button>
-              {(user?.isAdmin || user?.role) && (
-                <Link to="/admin">
-                  <button
-                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === "admin"
-                        ? "border-stone-900 text-stone-900"
-                        : "border-transparent text-stone-500 hover:text-stone-700"
-                    }`}
-                  >
-                    Admin Panel
-                  </button>
-                </Link>
-              )}
             </nav>
           </div>
 

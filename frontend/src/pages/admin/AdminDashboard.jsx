@@ -63,7 +63,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <p className="text-sm text-zinc-400 mb-1">Total Revenue</p>
-            <p className="text-2xl font-bold text-white">${stats?.totalRevenue?.toLocaleString() || "0"}</p>
+            <p className="text-2xl font-bold text-white">₹{stats?.totalRevenue?.toLocaleString() || "0"}</p>
             <p className="text-xs text-emerald-500 mt-2">+12.5% from last month</p>
           </div>
 
@@ -157,7 +157,7 @@ const AdminDashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300">
                       {order.userId?.name || "Guest"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300">${order.totalAmount}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-300">₹{order.totalAmount}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${
@@ -187,4 +187,4 @@ const AdminDashboard = () => {
   )
 }
 
-export default AdminDashboard 
+export default AdminDashboard

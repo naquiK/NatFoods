@@ -1,9 +1,8 @@
-// Middleware to check if user has specific permission
 const checkPermission = (resource, action) => {
   return async (req, res, next) => {
     try {
-      // Super admin bypass
-      if (req.user.isAdmin && !req.user.role) {
+      // Super admin bypass (always allow if isAdmin === true)
+      if (req.user?.isAdmin === true) {
         return next()
       }
 

@@ -75,7 +75,7 @@ const Cart = () => {
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-neutral-900 mb-2 truncate">{item.name}</h3>
-                    <p className="text-lg font-bold text-neutral-900">${item.price}</p>
+                    <p className="text-lg font-bold text-neutral-900">₹{item.price}</p>
                   </div>
 
                   {/* Quantity Controls */}
@@ -107,7 +107,7 @@ const Cart = () => {
 
                   {/* Item Total */}
                   <div className="text-right">
-                    <p className="font-bold text-neutral-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-bold text-neutral-900">₹{(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 </motion.div>
               ))}
@@ -136,27 +136,27 @@ const Cart = () => {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
+                    <span>{shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>₹{tax.toFixed(2)}</span>
                   </div>
                   <div className="border-t border-neutral-200 pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
                 {shipping > 0 && (
                   <div className="bg-primary-50 p-4 mb-6 text-sm">
-                    <p className="text-primary-700">Add ${(50 - subtotal).toFixed(2)} more to get free shipping!</p>
+                    <p className="text-primary-700">Add ₹{(50 - subtotal).toFixed(2)} more to get free shipping!</p>
                   </div>
                 )}
 
