@@ -14,14 +14,30 @@ const app = express()
 // Database connection
 connectDB()
 
-// Middleware
+
+const normalize = (u) => (typeof u === 'string' ? u.replace(/\/$/, '') : u)
+const allowedOrigins = [
+  normalize(process.env.FRONTEND_URL) || 'http://localhost:5173',
+  'http://localhost:3000',
+  'https://nat-foods.vercel.app',
+].filter(Boolean)
+
+console.log('CORS allowed origins:', allowedOrigins)
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL || "http://localhost:5173",
-      "http://localhost:3000",
-      "https://nat-foods.vercel.app/",
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (e.g. curl, server-to-server)
+      if (!origin) return callback(null, true)
+
+      const normalizedOrigin = normalize(origin)
+      if (allowedOrigins.indexOf(normalizedOrigin) !== -1) {
+        return callback(null, true)
+      }
+
+      console.warn('Blocked CORS request from origin:', origin)
+      return callback(new Error('Not allowed by CORS'))
+    },
     credentials: true,
   }),
 )
