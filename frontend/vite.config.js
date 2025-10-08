@@ -7,6 +7,6 @@ export default defineConfig({
     outDir: "dist",
   },
   server: {
-    historyApiFallback: true, // ensures dev server supports React Router
+    historyApiFallback: true,
   },
 })
