@@ -43,9 +43,9 @@ const Checkout = () => {
   const [errorMsg, setErrorMsg] = useState("")
 
   const subtotal = getCartTotal()
-  const shipping = subtotal > 500 ? 0 : 50
+  const shippingFee = subtotal > 500 ? 0 : 50
   const tax = subtotal * 0.1
-  const grandTotal = subtotal + shipping + tax
+  const grandTotal = subtotal + shippingFee + tax
 
   useEffect(() => {
     // refresh profile to get latest addresses if not present
@@ -85,18 +85,47 @@ const Checkout = () => {
 
   const createOrderOnBackend = async (paymentMethod, paymentStatus = "pending") => {
     setErrorMsg("")
+    const shipping = getShippingForOrder()
+
+    const shippingNormalized = {
+      fullName: shipping.fullName || user?.name || "",
+      address: shipping.address || shipping.address1 || "",
+      city: shipping.city || "",
+      postalCode: shipping.postalCode || shipping.zipCode || shipping.pinCode || "",
+      country: shipping.country || "",
+      phone: shipping.phone || shipping.contact || "",
+    }
+
+    const missing = Object.entries({
+      fullName: shippingNormalized.fullName,
+      address: shippingNormalized.address,
+      city: shippingNormalized.city,
+      postalCode: shippingNormalized.postalCode,
+      country: shippingNormalized.country,
+    })
+      .filter(([, v]) => !v)
+      .map(([k]) => k)
+
+    if (missing.length) {
+      const msg = `Please complete shipping details: ${missing.join(", ")}`
+      setErrorMsg(msg)
+      throw new Error(msg)
+    }
+
     const orderData = {
       items: cartItems.map((i) => ({
         productId: i.id || i.productId || i._id,
         quantity: i.quantity,
       })),
-      shippingAddress: getShippingForOrder(),
+      shippingAddress: shippingNormalized,
       paymentMethod,
       totalAmount: grandTotal,
       paymentStatus,
     }
+
     try {
-      await api.post("/api/orders", orderData)
+      const res = await api.post("/api/orders", orderData)
+      return res.data?.order // return created order
     } catch (err) {
       const apiMsg =
         err?.response?.data?.message || (err?.message?.includes("401") ? "Please login to place an order." : null)
@@ -134,9 +163,10 @@ const Checkout = () => {
         },
         notes: { address: getShippingForOrder().address },
         handler: async () => {
-          await createOrderOnBackend("razorpay", "paid")
+          const created = await createOrderOnBackend("razorpay", "paid")
           clearCart()
-          setOrderPlaced(true)
+          if (created?._id) window.location.href = `/order-success/${created._id}`
+          else setOrderPlaced(true)
         },
         theme: { color: "#0f766e" },
       }
@@ -155,9 +185,10 @@ const Checkout = () => {
     setLoading(true)
     try {
       if (formData.paymentMethod === "cod") {
-        await createOrderOnBackend("cod", "pending")
+        const created = await createOrderOnBackend("cod", "pending")
         clearCart()
-        setOrderPlaced(true)
+        if (created?._id) window.location.href = `/order-success/${created._id}`
+        else setOrderPlaced(true)
       } else {
         await handleRazorpay()
       }
@@ -168,7 +199,7 @@ const Checkout = () => {
 
   if (orderPlaced) {
     return (
-      <div className="min-h-screen py-16" style={{ background: "var(--color-bg)" }}>
+      <div className="min-h-screen py-16" style={{ background: "var(--color-bg)", color: "var(--color-fg)" }}>
         <div className="max-w-md mx-auto text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +220,10 @@ const Checkout = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen py-16 flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+      <div
+        className="min-h-screen py-16 flex items-center justify-center"
+        style={{ background: "var(--color-bg)", color: "var(--color-fg)" }}
+      >
         <div className="text-center">
           <h1 className="text-3xl font-serif mb-4">Your cart is empty</h1>
           <p className="text-sm mb-8" style={{ color: "var(--color-muted)" }}>
@@ -204,11 +238,15 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 bg-neutral-50">
+    <div className="min-h-screen pt-20" style={{ background: "var(--color-bg)", color: "var(--color-fg)" }}>
       <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl font-serif text-neutral-900">Checkout</h1>
-          <p className="text-sm text-neutral-600 mt-1">Secure payment powered by Razorpay</p>
+          <h1 className="text-3xl font-serif" style={{ color: "var(--color-fg)" }}>
+            Checkout
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
+            Secure payment powered by Razorpay
+          </p>
         </header>
 
         {errorMsg ? (
@@ -244,7 +282,7 @@ const Checkout = () => {
             </form>
           </div>
 
-          <OrderSummary items={cartItems} subtotal={subtotal} shipping={shipping} tax={tax} total={grandTotal} />
+          <OrderSummary items={cartItems} subtotal={subtotal} shipping={shippingFee} tax={tax} total={grandTotal} />
         </div>
       </div>
     </div>

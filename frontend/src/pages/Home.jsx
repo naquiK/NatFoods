@@ -72,6 +72,36 @@ const Home = () => {
       {/* New About section on Home */}
       <AboutSection />
 
+      {/* Trending Now section */}
+      {(saleProducts.length > 0 || featuredProducts.length > 0) && (
+        <section className="py-24 bg-[var(--color-bg)]">
+          <div className="section-padding">
+            <div className="container-max">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+                className="mb-8"
+              >
+                <h2 className="font-serif text-3xl md:text-4xl">Trending Now</h2>
+                <p className="text-[var(--color-muted)] max-w-2xl mt-2">
+                  Hand-picked bestsellers getting the most love this week.
+                </p>
+              </motion.div>
+
+              <div className="overflow-x-auto no-scrollbar">
+                <div className="grid grid-flow-col auto-cols-[minmax(220px,1fr)] gap-6">
+                  {(saleProducts.length ? saleProducts : featuredProducts).slice(0, 12).map((product) => (
+                    <ProductCard key={product._id} product={product} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Simple Carousel Spotlight using Featured Products from backend only */}
       {featuredProducts.length > 0 && <ProductSpotlight items={featuredProducts} />}
 
@@ -158,8 +188,6 @@ const Home = () => {
 
       {/* Neon CTA */}
       <NeonCTA />
-
-      
     </div>
   )
 }

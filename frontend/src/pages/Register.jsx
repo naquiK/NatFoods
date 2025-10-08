@@ -65,6 +65,7 @@ const Register = () => {
     })
     if (result.success && result.userId) {
       navigate("/verify-otp", { state: { userId: result.userId } })
+      console.log(result.userId)
     }
     setLoading(false)
   }

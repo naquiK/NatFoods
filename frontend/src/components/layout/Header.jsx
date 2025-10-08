@@ -9,13 +9,15 @@ import { useAuth } from "../../context/AuthContext"
 import { useCart } from "../../context/CartContext"
 import { useSettings } from "../../context/SettingsContext"
 import { useTheme } from "../../context/ThemeContext"
-import logo from "../../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
+import logo from "../../assets/logo.jpg"
+import { productsAPI } from "../../utils/api" // get suggestions
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isScrolled, setIsScrolled] = useState(false)
+  const [suggestions, setSuggestions] = useState([]) //
 
   const { user, logout } = useAuth()
   const { cartItems } = useCart()
@@ -36,6 +38,23 @@ const Header = () => {
     setIsMenuOpen(false)
     setIsSearchOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (!isSearchOpen || q.length < 2) {
+      setSuggestions([])
+      return
+    }
+    const t = setTimeout(async () => {
+      try {
+        const res = await productsAPI.getAll({ search: q, limit: 5 })
+        setSuggestions(res.data.products?.map((p) => ({ id: p._id, name: p.name })) || [])
+      } catch {
+        setSuggestions([])
+      }
+    }, 300)
+    return () => clearTimeout(t)
+  }, [searchQuery, isSearchOpen])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -90,7 +109,7 @@ const Header = () => {
             >
               <img
                 src={settings?.logo?.url || logo}
-                alt={settings?.siteName || "Nat-Organics"} 
+                alt={settings?.siteName || "Nat-Organics"}
                 className="h-8 w-auto"
               />
               <span className="hidden sm:inline">{settings?.siteName || "Nat-Organics"}</span>
@@ -207,6 +226,26 @@ const Header = () => {
                   className="w-full bg-white dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-2xl py-5 pl-14 pr-6 text-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   autoFocus
                 />
+                {suggestions.length > 0 && (
+                  <div
+                    className="absolute left-0 right-0 mt-2 rounded-xl border shadow-xl"
+                    style={{
+                      background: "var(--color-bg)",
+                      borderColor: "color-mix(in oklab, var(--color-fg) 12%, transparent)",
+                    }}
+                  >
+                    {suggestions.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className="w-full text-left px-4 py-2 hover:bg-neutral-50"
+                        onClick={() => setSearchQuery(s.name)}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </form>
             </motion.div>
           </motion.div>

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose")
 
+
 const roleSchema = new mongoose.Schema(
   {
     name: {
@@ -42,6 +43,12 @@ const roleSchema = new mongoose.Schema(
       dashboard: {
         view: { type: Boolean, default: false },
       },
+      custom: {
+        view: { type: Boolean, default: false },
+        create: { type: Boolean, default: false },
+        update: { type: Boolean, default: false },
+        delete: { type: Boolean, default: false },
+      },
     },
     isActive: {
       type: Boolean,
@@ -73,6 +80,7 @@ roleSchema.statics.getAdminRole = async function () {
         roles: { view: true, create: true, update: true, delete: true },
         settings: { view: true, update: true },
         dashboard: { view: true },
+        custom: { view: true, create: true, update: true, delete: true },
       },
     })
   }
@@ -96,6 +104,7 @@ roleSchema.statics.getModeratorRole = async function () {
         roles: { view: false, create: false, update: false, delete: false },
         settings: { view: false, update: false },
         dashboard: { view: true },
+        custom: { view: false, create: false, update: false, delete: false },
       },
     })
   }

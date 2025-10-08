@@ -1,6 +1,19 @@
 import axios from "axios"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000"
+// Robust API base URL resolution for Next & Vite and default to 5000
+const RESOLVE_NEXT_PUBLIC =
+  typeof process !== "undefined" && process.env && process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL
+    : undefined
+const RESOLVE_VITE =
+  typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL
+    : undefined
+
+const API_BASE_URL = RESOLVE_NEXT_PUBLIC || RESOLVE_VITE || "http://localhost:5000"
+
+// Export API_BASE_URL and document env usage
+export const BASE_URL = API_BASE_URL
 
 // Create axios instance
 const api = axios.create({
@@ -71,6 +84,11 @@ export const adminAPI = {
   getUsers: (params) => api.get("/api/admin/users", { params }),
   getOrders: (params) => api.get("/api/admin/orders", { params }),
   updateOrderStatus: (id, status) => api.put(`/api/admin/orders/${id}/status`, { status }),
+  getOrder: (id) => api.get(`/api/admin/orders/${id}`),
+  getOrderInvoice: (id) =>
+    api.get(`/api/admin/orders/${id}/invoice.pdf`, {
+      responseType: "blob",
+    }),
 }
 
 export const settingsAPI = {
@@ -89,6 +107,15 @@ export const wishlistAPI = {
   get: () => api.get("/api/auth/wishlist"),
   add: (productId) => api.post(`/api/auth/wishlist/${productId}`),
   remove: (productId) => api.delete(`/api/auth/wishlist/${productId}`),
+}
+
+export const ordersAPI = {
+  list: (params) => api.get("/api/orders", { params }),
+  get: (id) => api.get(`/api/orders/${id}`),
+  downloadInvoice: (id) =>
+    api.get(`/api/orders/${id}/invoice.pdf`, {
+      responseType: "blob",
+    }),
 }
 
 export { api }

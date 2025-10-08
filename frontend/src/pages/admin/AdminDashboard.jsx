@@ -24,7 +24,7 @@ const AdminDashboard = () => {
       setStats(statsRes.data)
       setRecentOrders(ordersRes.data?.orders || [])
     } catch (error) {
-      console.error("[v0] Error fetching dashboard data:", error)
+      console.error("Error fetching dashboard data:", error)
     } finally {
       setLoading(false)
     }

@@ -26,6 +26,8 @@ import ForgotPassword from "./pages/ForgotPassword"
 import VerifyResetOTP from "./pages/VerifyResetOTP"
 import ResetPassword from "./pages/ResetPassword"
 import VerifyOTP from "./pages/VerifyOTP"
+import OrderSuccess from "./pages/OrderSuccess"
+import OrderDetails from "./pages/OrderDetails"
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard"
@@ -34,6 +36,7 @@ import AdminOrders from "./pages/admin/Orders"
 import AdminUsers from "./pages/admin/Users"
 import SiteSettings from "./pages/admin/SiteSettings"
 import Roles from "./pages/admin/Roles"
+import AdminOrderDetails from "./pages/admin/OrderDetails"
 
 // Context Providers
 import { AuthProvider } from "./context/AuthContext"
@@ -75,7 +78,7 @@ function App() {
                 <TopBarProgress />
                 <Header />
 
-                <main className="flex-1">
+                <main className="flex-1 pt-20 sm:pt-24">
                   <AnimatePresence mode="wait">
                     <Routes>
                       {/* Public Routes */}
@@ -90,6 +93,20 @@ function App() {
                       <Route path="/verify-reset-otp" element={<VerifyResetOTP />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/verify-otp" element={<VerifyOTP />} />
+                      <Route path="/order-success/:id" element={<OrderSuccess />} />
+
+                      {/* User Order Details */}
+                      <Route
+                        path="/orders/:id"
+                        element={
+                          <ProtectedRoute>
+                            {/*
+                             Order details page shows expected date, items, address, invoice link
+                            */}
+                            <OrderDetails />
+                          </ProtectedRoute>
+                        }
+                      />
 
                       {/* Protected Routes */}
                       <Route
@@ -139,6 +156,17 @@ function App() {
                         element={
                           <AdminRoute>
                             <AdminOrders />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/orders/:id"
+                        element={
+                          <AdminRoute>
+                            {/*
+                             Admin Order details page shows expected date, items, address, invoice link
+                            */}
+                            <AdminOrderDetails />
                           </AdminRoute>
                         }
                       />

@@ -7,7 +7,7 @@ const ImageGallery = ({ images, onRemove, editable = true }) => {
     if (window.confirm("Are you sure you want to delete this image?")) {
       try {
         if (image.public_id) {
-          await api.delete(`/upload/image/${image.public_id}`)
+          await api.delete(`/api/upload/image/${image.public_id}`)
         }
         onRemove(index)
       } catch (error) {

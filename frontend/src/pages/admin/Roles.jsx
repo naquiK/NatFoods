@@ -7,11 +7,23 @@ import { api } from "../../utils/api"
 import Button from "../../components/ui/Button"
 import LoadingSpinner from "../../components/ui/LoadingSpinner"
 
+const PERMISSIONS = {
+  products: ["view", "create", "update", "delete"],
+  orders: ["view", "update", "delete"],
+  users: ["view", "update", "delete"],
+  roles: ["view", "create", "update", "delete"],
+  settings: ["view", "update"],
+  dashboard: ["view"],
+  custom: ["view", "create", "update", "delete"],
+}
+
 const Roles = () => {
   const [roles, setRoles] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name: "", description: "" })
   const [saving, setSaving] = useState(false)
+  const [permDraft, setPermDraft] = useState({})
+  const [customResourceName, setCustomResourceName] = useState("custom")
 
   const loadRoles = async () => {
     try {
@@ -28,12 +40,23 @@ const Roles = () => {
     loadRoles()
   }, [])
 
+  const togglePerm = (resource, action) => {
+    setPermDraft((p) => ({
+      ...p,
+      [resource]: { ...(p[resource] || {}), [action]: !(p[resource]?.[action] === true) },
+    }))
+  }
+
   const createRole = async (e) => {
     e.preventDefault()
     setSaving(true)
     try {
-      await api.post("/api/roles", { ...form, permissions: {} })
+      await api.post("/api/roles", {
+        ...form,
+        permissions: permDraft,
+      })
       setForm({ name: "", description: "" })
+      setPermDraft({})
       await loadRoles()
     } catch (e) {
       console.error("Error creating role:", e)
@@ -72,10 +95,12 @@ const Roles = () => {
     <AdminLayout>
       <PermissionRoute resource="roles" action="view">
         <div className="min-h-screen bg-stone-50 dark:bg-zinc-950 py-6">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-stone-900 dark:text-white">Roles</h1>
-              <p className="text-stone-600 dark:text-zinc-400 mt-2">Create, activate/deactivate, and manage roles.</p>
+              <p className="text-stone-600 dark:text-zinc-400 mt-2">
+                Create, activate/deactivate, and manage role permissions.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -107,6 +132,40 @@ const Roles = () => {
                     placeholder="What permissions this role should have"
                   />
                 </div>
+
+                <div className="space-y-4">
+                  {Object.entries(PERMISSIONS).map(([resource, actions]) => (
+                    <div key={resource} className="border rounded-lg p-3 dark:border-zinc-700">
+                      <div className="font-semibold mb-2 capitalize">
+                        {resource === "custom" ? customResourceName : resource}
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        {actions.map((act) => (
+                          <label key={act} className="inline-flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!permDraft[resource]?.[act]}
+                              onChange={() => togglePerm(resource, act)}
+                            />
+                            <span className="text-sm capitalize">{act}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {resource === "custom" && (
+                        <div className="mt-2">
+                          <input
+                            value={customResourceName}
+                            onChange={(e) => setCustomResourceName(e.target.value)}
+                            className="px-3 py-1 rounded border dark:border-zinc-700 bg-transparent"
+                            aria-label="Custom resource name"
+                          />
+                          <p className="text-xs text-stone-500 mt-1">This is the "Other" resource admins can assign.</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
                 <Button
                   type="submit"
                   disabled={saving}
@@ -122,16 +181,16 @@ const Roles = () => {
                   <table className="min-w-full divide-y divide-stone-200 dark:divide-zinc-800">
                     <thead className="bg-stone-50 dark:bg-zinc-900/50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase">
                           Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase">
                           Description
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase">
                           Actions
                         </th>
                       </tr>
@@ -145,11 +204,7 @@ const Roles = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                r.isActive
-                                  ? "bg-green-100 text-green-800 dark:bg-emerald-500/10 dark:text-emerald-400"
-                                  : "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-400"
-                              }`}
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${r.isActive ? "bg-green-100 text-green-800 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-400"}`}
                             >
                               {r.isActive ? "Active" : "Inactive"}
                             </span>

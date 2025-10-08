@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { Filter, Grid, List, ChevronDown, X, Search, Sparkles, Star } from "lucide-react"
+import { Grid, List, X, Search, Sparkles } from "lucide-react"
 import { productsAPI } from "../utils/api"
 import ProductCard from "../components/products/ProductCard"
 import Button from "../components/ui/Button"
@@ -18,6 +18,8 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState("grid")
   const [showFilters, setShowFilters] = useState(false)
+  const [searchInput, setSearchInput] = useState("")
+  const [suggestions, setSuggestions] = useState([])
 
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -37,6 +39,23 @@ const Products = () => {
     fetchProducts()
     fetchFiltersData()
   }, [searchParams, currentPage])
+
+  useEffect(() => {
+    const q = searchInput.trim()
+    if (q.length < 2) {
+      setSuggestions([])
+      return
+    }
+    const t = setTimeout(async () => {
+      try {
+        const res = await productsAPI.getAll({ search: q, page: 1, limit: 5, sort: "createdAt", order: "desc" })
+        setSuggestions(res.data.products?.map((p) => ({ id: p._id, name: p.name })) || [])
+      } catch {
+        setSuggestions([])
+      }
+    }, 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -69,13 +88,21 @@ const Products = () => {
     }
   }
 
+  const applySearch = () => {
+    const newFilters = { ...filters, search: searchInput }
+    setFilters(newFilters)
+    const newSearchParams = new URLSearchParams()
+    Object.entries(newFilters).forEach(([k, v]) => {
+      if (v) newSearchParams.set(k, v)
+    })
+    setSearchParams(newSearchParams)
+    setCurrentPage(1)
+  }
+
   const handleFilterChange = (key, value) => {
-    // Debounce search input
     if (key === "search") {
-      const timer = setTimeout(() => {
-        updateFiltersAndParams({ ...filters, [key]: value })
-      }, 500)
-      return () => clearTimeout(timer)
+      // handled via searchInput + applySearch button
+      return
     }
     updateFiltersAndParams({ ...filters, [key]: value })
   }
@@ -116,22 +143,21 @@ const Products = () => {
 
   // --- New UI Starts Here ---
   return (
-    <div className="pt-20 min-h-screen bg-gradient-to-br from-violet-50 via-white to-cyan-50 dark:from-slate-900 dark:via-purple-900 dark:to-slate-800 text-neutral-800 dark:text-neutral-200">
+    <div
+      className="pt-20 min-h-screen"
+      style={{ background: "color-mix(in oklab, var(--color-primary) 4%, var(--color-bg))" }}
+    >
       {/* --- Immersive Header --- */}
       <motion.div
         className="relative h-80 md:h-96 flex items-center justify-center text-center text-white overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(90deg, color-mix(in oklab, var(--color-primary) 90%, #000), var(--color-primary))",
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-
-        {/* Floating elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-pink-400 to-orange-400 rounded-full opacity-30 blur-xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full opacity-30 blur-xl animate-pulse delay-1000"></div>
-
         <motion.div
           className="relative z-10 max-w-4xl mx-auto px-6"
           initial={{ y: 30, opacity: 0 }}
@@ -139,23 +165,13 @@ const Products = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent">
-              Our Collection
-            </h1>
-            <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
+            <Sparkles className="w-8 h-8 text-amber-300" />
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">{"Our Collection"}</h1>
+            <Sparkles className="w-8 h-8 text-amber-300" />
           </div>
           <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-            Discover amazing products curated just for you ✨
+            {"Discover amazing products curated just for you ✨"}
           </p>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <Star className="w-5 h-5 text-yellow-400 fill-current" />
-            <Star className="w-5 h-5 text-yellow-400 fill-current" />
-            <Star className="w-5 h-5 text-yellow-400 fill-current" />
-            <Star className="w-5 h-5 text-yellow-400 fill-current" />
-            <Star className="w-5 h-5 text-yellow-400 fill-current" />
-            <span className="text-white/80 ml-2">Rated 5/5 by our customers</span>
-          </div>
         </motion.div>
       </motion.div>
 
@@ -168,35 +184,79 @@ const Products = () => {
           transition={{ duration: 0.6 }}
         >
           <div className="relative w-full md:w-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-violet-400" />
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
+              style={{ color: "color-mix(in oklab, var(--color-primary) 60%, white)" }}
+            />
             <input
               type="text"
-              defaultValue={filters.search}
-              onChange={(e) => handleFilterChange("search", e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search for amazing products..."
-              className="w-full md:w-80 pl-12 pr-4 py-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-2 border-violet-200 dark:border-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-500/30 focus:border-violet-500 transition-all duration-200 text-gray-700 dark:text-gray-200 placeholder-gray-400"
+              className="w-full md:w-80 pl-12 pr-4 py-4 rounded-2xl"
+              style={{
+                background: "color-mix(in oklab, var(--color-fg) 4%, var(--color-bg))",
+                border: "2px solid color-mix(in oklab, var(--color-primary) 20%, transparent)",
+                color: "var(--color-fg)",
+              }}
             />
+            {suggestions.length > 0 && (
+              <div
+                className="absolute mt-2 w-full rounded-xl shadow-lg z-10"
+                style={{
+                  background: "var(--color-bg)",
+                  border: "1px solid color-mix(in oklab, var(--color-fg) 12%, transparent)",
+                }}
+              >
+                {suggestions.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSearchInput(s.name)}
+                    className="block w-full text-left px-4 py-2 hover:bg-neutral-50"
+                    style={{ color: "var(--color-fg)" }}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <Button
               variant="secondary"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 hover:from-violet-600 hover:to-purple-700 rounded-2xl px-6 py-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              onClick={applySearch}
+              className="rounded-2xl px-6 py-3"
+              style={{
+                background: "var(--color-primary)",
+                color: "#fff",
+                border: "0",
+              }}
             >
-              <Filter size={16} />
-              Filters
-              <ChevronDown size={16} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
+              {"Search"}
             </Button>
-            <div className="flex border-2 border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+            <div
+              className="flex border-2 rounded-2xl overflow-hidden"
+              style={{
+                borderColor: "color-mix(in oklab, var(--color-fg) 10%, transparent)",
+                background: "color-mix(in oklab, var(--color-fg) 4%, var(--color-bg))",
+              }}
+            >
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-3 transition-all duration-200 ${viewMode === "grid" ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg" : "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700"}`}
+                className={`p-3 ${viewMode === "grid" ? "text-white" : ""}`}
+                style={{
+                  background: viewMode === "grid" ? "var(--color-primary)" : "transparent",
+                }}
               >
                 <Grid size={16} />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-3 transition-all duration-200 ${viewMode === "list" ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg" : "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700"}`}
+                className={`p-3 ${viewMode === "list" ? "text-white" : ""}`}
+                style={{
+                  background: viewMode === "list" ? "var(--color-primary)" : "transparent",
+                }}
               >
                 <List size={16} />
               </button>

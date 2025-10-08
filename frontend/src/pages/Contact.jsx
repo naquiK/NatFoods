@@ -34,67 +34,69 @@ const Contact = () => {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-16">
+    <div className="min-h-screen pt-20 bg-stone-50 dark:bg-zinc-950">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-stone-900 mb-6 text-balance">Get in Touch</h1>
-          <p className="text-xl text-stone-600 text-balance">
+          <h1 className="text-4xl md:text-5xl font-bold text-stone-900 dark:text-white mb-6 text-balance">
+            Get in Touch
+          </h1>
+          <p className="text-xl text-stone-600 dark:text-zinc-400 text-balance">
             We'd love to hear from you. Send us a message and we'll respond as soon as possible.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
-            <h2 className="text-2xl font-bold text-stone-900 mb-6">Send us a Message</h2>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-stone-200 dark:border-zinc-800 p-8">
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-white mb-6">Send us a Message</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Name</label>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-zinc-300 mb-2">Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-stone-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 focus:ring-2 focus:ring-stone-500 dark:focus:ring-zinc-400 focus:border-transparent"
                     placeholder="Your name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-stone-700 dark:text-zinc-300 mb-2">Email</label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-stone-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 focus:ring-2 focus:ring-stone-500 dark:focus:ring-zinc-400 focus:border-transparent"
                     placeholder="your@email.com"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Subject</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-zinc-300 mb-2">Subject</label>
                 <input
                   type="text"
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-stone-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 focus:ring-2 focus:ring-stone-500 dark:focus:ring-zinc-400 focus:border-transparent"
                   placeholder="What's this about?"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">Message</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-zinc-300 mb-2">Message</label>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   required
                   rows={6}
-                  className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-stone-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 focus:ring-2 focus:ring-stone-500 dark:focus:ring-zinc-400 focus:border-transparent"
                   placeholder="Tell us more about your inquiry..."
                 />
               </div>
@@ -106,13 +108,18 @@ const Contact = () => {
 
           {/* Contact Information */}
           <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
-              <h3 className="text-xl font-bold text-stone-900 mb-6">Contact Information</h3>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-stone-200 dark:border-zinc-800 p-8">
+              <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-6">Contact Information</h3>
               <div className="space-y-4">
                 {settings?.contactInfo?.email && (
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mr-4">
-                      <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 bg-stone-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center mr-4">
+                      <svg
+                        className="w-5 h-5 text-stone-600 dark:text-zinc-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -122,16 +129,20 @@ const Contact = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-stone-900">Email</p>
-                      <p className="text-stone-600">{settings.contactInfo.email}</p>
+                      <p className="font-medium text-stone-900 dark:text-white">Email</p>
+                      <p className="text-stone-600 dark:text-zinc-400">{settings.contactInfo.email}</p>
                     </div>
                   </div>
                 )}
-
                 {settings?.contactInfo?.phone && (
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mr-4">
-                      <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 bg-stone-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center mr-4">
+                      <svg
+                        className="w-5 h-5 text-stone-600 dark:text-zinc-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -141,16 +152,20 @@ const Contact = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-stone-900">Phone</p>
-                      <p className="text-stone-600">{settings.contactInfo.phone}</p>
+                      <p className="font-medium text-stone-900 dark:text-white">Phone</p>
+                      <p className="text-stone-600 dark:text-zinc-400">{settings.contactInfo.phone}</p>
                     </div>
                   </div>
                 )}
-
                 {settings?.contactInfo?.address && (
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center mr-4">
-                      <svg className="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 bg-stone-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center mr-4">
+                      <svg
+                        className="w-5 h-5 text-stone-600 dark:text-zinc-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -166,8 +181,8 @@ const Contact = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-stone-900">Address</p>
-                      <p className="text-stone-600">{settings.contactInfo.address}</p>
+                      <p className="font-medium text-stone-900 dark:text-white">Address</p>
+                      <p className="text-stone-600 dark:text-zinc-400">{settings.contactInfo.address}</p>
                     </div>
                   </div>
                 )}
@@ -214,18 +229,6 @@ const Contact = () => {
                     >
                       <svg className="w-5 h-5 text-stone-600" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323C6.001 8.198 7.152 7.708 8.449 7.708s2.448.49 3.323 1.416c.875.875 1.365 2.026 1.365 3.323s-.49 2.448-1.365 3.323c-.875.875-2.026 1.365-3.323 1.365s-2.448-.49-3.323-1.365c-.875-.875-1.365-2.026-1.365-3.323s.49-2.448 1.365-3.323z" />
-                      </svg>
-                    </a>
-                  )}
-                  {settings.socialMedia.instagram && (
-                    <a
-                      href={settings.socialMedia.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center hover:bg-stone-200 transition-colors"
-                    >
-                      <svg className="w-5 h-5 text-stone-600" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323C6.001 8.198 7.152 7.708 8.449 7.708s2.448.49 3.323 1.416c.875.875 1.365 2.026 1.365 3.323s-.49 2.448-1.365 3.323z" />
                       </svg>
                     </a>
                   )}

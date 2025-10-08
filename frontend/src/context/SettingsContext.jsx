@@ -1,7 +1,7 @@
 "use client"
 import { createContext, useContext, useState, useEffect } from "react"
 import { settingsAPI } from "../utils/api"
-import logo from "../assets/WhatsApp Image 2025-09-29 at 20.09.08_1ed7565b.jpg"
+import logo from "../assets/logo.jpg"
 
 const SettingsContext = createContext()
 

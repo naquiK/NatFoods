@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
-import { api, addressAPI } from "../utils/api"
+import { api, addressAPI, ordersAPI } from "../utils/api"
 import Button from "../components/ui/Button"
 import LoadingSpinner from "../components/ui/LoadingSpinner"
+import { Link } from "react-router-dom"
 
 const Profile = () => {
   const { user, refreshProfile } = useAuth()
@@ -14,7 +15,6 @@ const Profile = () => {
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
-    address: user?.address || "",
   })
   const [newAddress, setNewAddress] = useState({
     contactName: "",
@@ -26,13 +26,61 @@ const Profile = () => {
     country: "",
     isDefault: false,
   })
+  const [orders, setOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [ordersPage, setOrdersPage] = useState(1)
+  const [ordersTotalPages, setOrdersTotalPages] = useState(1)
+
+  const downloadInvoice = async (orderId) => {
+    try {
+      // ordersAPI.downloadInvoice returns a blob (responseType: 'blob')
+      const res = await ordersAPI.downloadInvoice(orderId)
+      const blob = new Blob([res.data], { type: "application/pdf" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `invoice-${orderId}.pdf`
+      // append to DOM to make click work on some browsers
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error("[v0] Invoice download error:", e?.message || e)
+      alert("Failed to download invoice. Please try again.")
+    }
+  }
+
+
+  useEffect(() => {
+    if (activeTab !== "orders") return
+    let isMounted = true
+    ;(async () => {
+      try {
+        setOrdersLoading(true)
+        const res = await ordersAPI.list({ page: ordersPage, limit: 10 })
+        if (!isMounted) return
+        setOrders(res.data.orders || [])
+        setOrdersTotalPages(res.data.totalPages || 1)
+      } catch (err) {
+        console.error("[v0] Fetch user orders error:", err?.message)
+        setOrders([])
+        setOrdersTotalPages(1)
+      } finally {
+        setOrdersLoading(false)
+      }
+    })()
+    return () => {
+      isMounted = false
+    }
+  }, [activeTab, ordersPage])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await api.put("/auth/profile", formData)
+      const response = await api.put("/api/auth/profile-update", formData)
       await refreshProfile()
       alert("Profile updated successfully!")
     } catch (error) {
@@ -142,16 +190,6 @@ const Profile = () => {
                         className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-2">Address</label>
-                      <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
-                      />
-                    </div>
                   </div>
                   <div className="flex justify-end">
                     <Button type="submit" disabled={loading} className="bg-stone-900 hover:bg-stone-800">
@@ -165,23 +203,87 @@ const Profile = () => {
             {activeTab === "orders" && (
               <div>
                 <h2 className="text-xl font-semibold text-stone-900 mb-6">Order History</h2>
-                <div className="text-center py-12">
-                  <svg
-                    className="w-16 h-16 text-stone-400 mx-auto mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                    />
-                  </svg>
-                  <p className="text-stone-600">No orders found</p>
-                  <p className="text-sm text-stone-500 mt-2">Start shopping to see your orders here</p>
-                </div>
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <LoadingSpinner />
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <svg
+                      className="w-16 h-16 text-stone-400 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                      />
+                    </svg>
+                    <p className="text-stone-600">No orders found</p>
+                    <p className="text-sm text-stone-500 mt-2">Start shopping to see your orders here</p>
+                  </div>
+                ) : (
+                  <>
+                    <ul className="space-y-4">
+                      {orders.map((order) => (
+                        <li key={order._id} className="border rounded-lg p-4 border-stone-200">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                              <p className="text-sm text-stone-500">Order</p>
+                              <p className="text-stone-900 font-medium">#{order._id.slice(-8)}</p>
+                              <p className="text-sm text-stone-500">
+                                Placed on {new Date(order.createdAt).toLocaleDateString()}
+                              </p>
+                              {order.expectedDeliveryDate && (
+                                <p className="text-sm text-stone-600">
+                                  Expected: {new Date(order.expectedDeliveryDate).toDateString()}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-sm text-stone-700">
+                              <p className="font-medium">Items: {order.items?.length || 0}</p>
+                              <p>Total: ₹{Number(order.totalAmount).toFixed(2)}</p>
+                              <p className="capitalize">Status: {order.status}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Link
+                                to={`/orders/${order._id}`}
+                                className="px-3 py-2 rounded bg-stone-900 text-white hover:bg-stone-800 text-sm"
+                              >
+                                View Details
+                              </Link>
+         <button onClick={() => downloadInvoice(order._id)} className="px-3 py-2 rounded bg-stone-900 text-white hover:bg-stone-800">
+          Download Invoice
+        </button>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex items-center justify-between mt-6">
+                      <button
+                        disabled={ordersPage <= 1}
+                        onClick={() => setOrdersPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-2 rounded border border-stone-300 text-sm disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <p className="text-sm text-stone-600">
+                        Page {ordersPage} of {ordersTotalPages}
+                      </p>
+                      <button
+                        disabled={ordersPage >= ordersTotalPages}
+                        onClick={() => setOrdersPage((p) => p + 1)}
+                        className="px-3 py-2 rounded border border-stone-300 text-sm disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

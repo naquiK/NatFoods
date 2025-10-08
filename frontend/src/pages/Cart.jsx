@@ -23,7 +23,7 @@ const Cart = () => {
 
   if (cartItems.length === 0) {
     return (
-      <div className="pt-20 min-h-screen bg-neutral-50">
+      <div className="pt-20 min-h-screen bg-neutral-50 dark:bg-neutral-900">
         <div className="section-padding py-24">
           <div className="container-max">
             <div className="text-center">
@@ -45,7 +45,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="pt-20 min-h-screen bg-neutral-50">
+    <div className="pt-20 min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <div className="section-padding py-12">
         <div className="container-max">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -61,7 +61,7 @@ const Cart = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="bg-white p-6 border border-neutral-200 flex items-center space-x-6"
+                  className="bg-white dark:bg-neutral-900 p-6 border border-neutral-200 dark:border-neutral-800 flex items-center space-x-6"
                 >
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-neutral-100 overflow-hidden flex-shrink-0">
@@ -80,10 +80,10 @@ const Cart = () => {
 
                   {/* Quantity Controls */}
                   <div className="flex items-center space-x-3">
-                    <div className="flex items-center border border-neutral-300">
+                    <div className="flex items-center border border-neutral-300 dark:border-neutral-700">
                       <button
                         onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                        className="p-2 hover:bg-neutral-100"
+                        className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
                         <Minus size={16} />
                       </button>
@@ -91,7 +91,7 @@ const Cart = () => {
                       <button
                         onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                         disabled={item.quantity >= item.stock}
-                        className="p-2 hover:bg-neutral-100 disabled:opacity-50"
+                        className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50"
                       >
                         <Plus size={16} />
                       </button>
@@ -99,7 +99,7 @@ const Cart = () => {
 
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded"
+                      className="p-2 text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-700 rounded"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -107,14 +107,20 @@ const Cart = () => {
 
                   {/* Item Total */}
                   <div className="text-right">
-                    <p className="font-bold text-neutral-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-bold text-neutral-900 dark:text-neutral-400">
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </p>
                   </div>
                 </motion.div>
               ))}
 
               {/* Clear Cart */}
-              <div className="flex justify-between items-center pt-6 border-t border-neutral-200">
-                <Button variant="ghost" onClick={clearCart} className="text-red-600 hover:text-red-700">
+              <div className="flex justify-between items-center pt-6 border-t border-neutral-200 dark:border-neutral-800">
+                <Button
+                  variant="ghost"
+                  onClick={clearCart}
+                  className="text-red-600 dark:text-red-500 hover:text-red-700 dark:hover:text-red-600"
+                >
                   Clear Cart
                 </Button>
                 <Button as={Link} to="/products" variant="secondary">
@@ -129,7 +135,7 @@ const Cart = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="bg-white p-6 border border-neutral-200 sticky top-24"
+                className="bg-white dark:bg-neutral-900 p-6 border border-neutral-200 dark:border-neutral-800 sticky top-24"
               >
                 <h2 className="text-h3 font-serif mb-6">Order Summary</h2>
 
@@ -146,7 +152,7 @@ const Cart = () => {
                     <span>Tax</span>
                     <span>₹{tax.toFixed(2)}</span>
                   </div>
-                  <div className="border-t border-neutral-200 pt-4">
+                  <div className="border-t border-neutral-200 dark:border-neutral-800 pt-4">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
                       <span>₹{total.toFixed(2)}</span>
@@ -155,8 +161,10 @@ const Cart = () => {
                 </div>
 
                 {shipping > 0 && (
-                  <div className="bg-primary-50 p-4 mb-6 text-sm">
-                    <p className="text-primary-700">Add ₹{(50 - subtotal).toFixed(2)} more to get free shipping!</p>
+                  <div className="bg-primary-50 dark:bg-primary-700 p-4 mb-6 text-sm">
+                    <p className="text-primary-700 dark:text-primary-300">
+                      Add ₹{(50 - subtotal).toFixed(2)} more to get free shipping!
+                    </p>
                   </div>
                 )}
 
@@ -164,7 +172,7 @@ const Cart = () => {
                   Proceed to Checkout
                 </Button>
 
-                <div className="text-center text-sm text-neutral-600">
+                <div className="text-center text-sm text-neutral-600 dark:text-neutral-400">
                   <p>Secure checkout with SSL encryption</p>
                 </div>
               </motion.div>

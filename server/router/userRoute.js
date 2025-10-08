@@ -18,19 +18,21 @@ const {
   resetPassword,
   getWishlist, // import
   addToWishlist, // import
-  removeFromWishlist, // import
+  removeFromWishlist,
+  optVerification, // import
 } = require("../controllers/user-Conntroller")
 
 // Public routes
 router.post("/register", register)
+router.post("/verify-otp/:id", optVerification) 
 router.post("/login", login)
 router.post("/forgot-password", forgetPasswordOTP)
-router.post("/verify-reset-otp", verifyResetOtp) // new
-router.post("/reset-password", resetPassword) // new
+router.post("/verify-reset-otp", verifyResetOtp) 
+router.post("/reset-password", resetPassword) 
 
 // Protected routes
 router.get("/profile", authMiddleware, getInfo)
-router.put("/profile", authMiddleware, editProfile)
+router.put("/profile-update", authMiddleware, editProfile)
 router.post("/profile/picture", authMiddleware, upload.single("profilePic"))
 
 // Address routes

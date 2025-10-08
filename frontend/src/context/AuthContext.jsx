@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
           const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/profile`)
           setUser(response.data)
         } catch (error) {
-          console.error("[v0] Auth check failed:", error)
+          console.error("Auth check failed:", error)
           logout()
         }
       }
@@ -70,15 +70,10 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, userData)
-
-      const { token: newToken, user: newUser } = response.data
-
-      setToken(newToken)
-      setUser(newUser)
-      localStorage.setItem("token", newToken)
-
-      toast.success("Registration successful!")
-      return { success: true }
+      // Do NOT set token or user here
+      toast.success("OTP sent successfully!")
+      // Return userId for navigation
+      return { success: true, userId: response.data.data.id }
     } catch (error) {
       const message = error.response?.data?.message || "Registration failed"
       toast.error(message)

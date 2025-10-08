@@ -1,5 +1,6 @@
 const mongoose = require("mongoose")
 const validator = require("validator")
+const role = require("./role-model")
 
 const userSchema = new mongoose.Schema(
   {

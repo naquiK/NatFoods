@@ -4,6 +4,10 @@ const jwt = require("jsonwebtoken")
 require("dotenv").config()
 const connectDB = require("./DB/connectionDB")
 const path = require("path")
+const removedUnverifiedData = require("./authomation/removedUnverifiedData")
+
+// Start the cron job to remove unverified users
+removedUnverifiedData()
 
 const app = express()
 
@@ -13,8 +17,10 @@ connectDB()
 // Middleware
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL || "http://localhost:5173",
-      "https://nat-foods.vercel.app/"
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:5173",
+      "http://localhost:3000",
+      "https://nat-foods.vercel.app/",
     ],
     credentials: true,
   }),
@@ -33,7 +39,7 @@ app.use("/api/cart", require("./router/cartRoute"))
 app.use("/api/orders", require("./router/orderRoute"))
 app.use("/api/settings", require("./router/settingsRoute"))
 app.use("/api/upload", require("./router/uploadRoute")) // Added upload routes for Cloudinary integration
-// app.use("/api/payment", require("./router/paymentRoute")) // Added payment routes
+// app.use("/api/payment", require("./router/paymentRoute"))
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -2,6 +2,7 @@ const express = require("express")
 const router = express.Router()
 const Role = require("../model/role-model")
 const User = require("../model/userModel")
+const mongoose = require("mongoose")
 const { authMiddleware } = require("../middleware/auth-middleware")
 const { adminMiddleware } = require("../middleware/adminMiddleware")
 const { checkPermission } = require("../middleware/permission-middleware")
@@ -119,6 +120,14 @@ router.delete("/:id", checkPermission("roles", "delete"), async (req, res) => {
 router.post("/assign", checkPermission("roles", "update"), async (req, res) => {
   try {
     const { userId, roleId } = req.body
+
+    // Validate ObjectIds early to prevent cast errors
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid userId" })
+    }
+    if (!mongoose.isValidObjectId(roleId)) {
+      return res.status(400).json({ success: false, message: "Invalid roleId" })
+    }
 
     const user = await User.findById(userId)
     if (!user) {

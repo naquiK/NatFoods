@@ -70,6 +70,8 @@ const orderSchema = new mongoose.Schema(
     },
     deliveredAt: Date,
     notes: String,
+    expectedDeliveryDate: Date, // Added expectedDeliveryDate
+    invoiceUrl: { type: String }, // Added invoiceUrl to store Cloudinary PDF URL
   },
   {
     timestamps: true,
@@ -79,3 +81,4 @@ const orderSchema = new mongoose.Schema(
 const Order = mongoose.model("Order", orderSchema)
 
 module.exports = Order
+ 

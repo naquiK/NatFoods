@@ -1,5 +1,5 @@
 const cron=require("node-cron")
-const User=require("../models/userModel")
+const User=require("../model/userModel")
 
 module.exports = () => {
     cron.schedule("*/30 * * * *", async () => {

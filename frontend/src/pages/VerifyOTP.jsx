@@ -77,7 +77,7 @@ const VerifyOTP = () => {
       if (token) {
         await setAuthToken(token)
       }
-      navigate("/")
+      navigate("/login")
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid OTP")
     } finally {

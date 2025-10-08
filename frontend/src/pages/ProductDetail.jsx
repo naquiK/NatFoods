@@ -21,6 +21,7 @@ const ProductDetail = () => {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" })
   const [submittingReview, setSubmittingReview] = useState(false)
   const [wishlisted, setWishlisted] = useState(false)
+  const [wishlistLoading, setWishlistLoading] = useState(false)
 
   const { addToCart } = useCart()
   const { user, isAuthenticated } = useAuth()
@@ -79,10 +80,11 @@ const ProductDetail = () => {
   }
 
   const toggleWishlist = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please login to use wishlist")
+    if (!isAuthenticated || !product?._id || wishlistLoading) {
+      if (!isAuthenticated) toast.error("Please login to use wishlist")
       return
     }
+    setWishlistLoading(true)
     try {
       if (wishlisted) {
         await api.delete(`/api/auth/wishlist/${product._id}`)
@@ -95,6 +97,8 @@ const ProductDetail = () => {
       }
     } catch (e) {
       toast.error(e.response?.data?.message || "Wishlist action failed")
+    } finally {
+      setWishlistLoading(false)
     }
   }
 
@@ -106,7 +110,7 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-cyan-50 dark:from-slate-900 dark:to-purple-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-slate-900 dark:to-teal-900">
         <LoadingSpinner size="large" />
       </div>
     )
@@ -114,10 +118,10 @@ const ProductDetail = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 to-cyan-50 dark:from-slate-900 dark:to-purple-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-slate-900 dark:to-teal-900">
         <div className="text-center">
           <h2 className="text-h2 font-serif mb-4">Product Not Found</h2>
-          <Link to="/products" className="text-primary-600 hover:underline">
+          <Link to="/products" className="text-teal-600 hover:underline">
             Back to Products
           </Link>
         </div>
@@ -135,19 +139,22 @@ const ProductDetail = () => {
   ]
 
   return (
-    <div className="pt-20 min-h-screen bg-gradient-to-br from-violet-50 via-white to-cyan-50 dark:from-slate-900 dark:via-purple-900 dark:to-slate-800">
+    <div
+      className="pt-20 min-h-screen"
+      style={{ background: "color-mix(in oklab, var(--color-primary) 4%, var(--color-bg))" }}
+    >
       <div className="section-padding py-12">
         <div className="container-max">
           {/* Enhanced Breadcrumb */}
-          <nav className="flex items-center space-x-2 text-sm mb-8 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-6 py-3 w-fit">
-            <Link to="/" className="text-violet-600 hover:text-violet-800 font-medium transition-colors duration-200">
+          <nav
+            className="flex items-center space-x-2 text-sm mb-8 rounded-full px-6 py-3 w-fit"
+            style={{ background: "color-mix(in oklab, var(--color-fg) 4%, var(--color-bg))" }}
+          >
+            <Link to="/" className="font-medium" style={{ color: "var(--color-primary)" }}>
               Home
             </Link>
             <span className="text-gray-400">/</span>
-            <Link
-              to="/products"
-              className="text-violet-600 hover:text-violet-800 font-medium transition-colors duration-200"
-            >
+            <Link to="/products" className="font-medium" style={{ color: "var(--color-primary)" }}>
               Products
             </Link>
             <span className="text-gray-400">/</span>
@@ -159,8 +166,13 @@ const ProductDetail = () => {
             <div className="space-y-6">
               {/* Main Image with gradient border */}
               <motion.div
-                className="relative aspect-square bg-gradient-to-br from-violet-100 to-cyan-100 dark:from-slate-700 dark:to-purple-800 overflow-hidden rounded-3xl p-2"
-                initial={{ opacity: 0, scale: 0.9 }}
+                className="relative aspect-square overflow-hidden rounded-3xl p-2"
+                style={{
+                  background:
+                    "linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 25%, transparent), transparent)",
+                  border: "1px solid color-mix(in oklab, var(--color-primary) 30%, transparent)",
+                }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6 }}
               >
@@ -194,8 +206,8 @@ const ProductDetail = () => {
                       onClick={() => setSelectedImage(index)}
                       className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-3 transition-all duration-200 ${
                         selectedImage === index
-                          ? "border-violet-500 shadow-lg scale-110"
-                          : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
+                          ? "border-teal-500 shadow-lg scale-110"
+                          : "border-gray-200 dark:border-gray-600 hover:border-teal-300"
                       }`}
                     >
                       <img
@@ -214,15 +226,15 @@ const ProductDetail = () => {
               {/* Brand with icon */}
               {product.brand && (
                 <div className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-violet-500" />
-                  <p className="text-sm uppercase tracking-wide text-violet-600 dark:text-violet-400 font-semibold">
+                  <Award className="w-5 h-5 text-teal-500" />
+                  <p className="text-sm uppercase tracking-wide text-teal-600 dark:text-teal-400 font-semibold">
                     {product.brand}
                   </p>
                 </div>
               )}
 
               {/* Enhanced Name */}
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-teal-600 via-teal-700 to-teal-800 bg-clip-text text-transparent leading-tight">
                 {product.name}
               </h1>
 
@@ -245,9 +257,9 @@ const ProductDetail = () => {
               )}
 
               {/* Enhanced Price */}
-              <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-slate-800 dark:to-purple-900 rounded-2xl p-6">
+              <div className="bg-gradient-to-r from-teal-50 to-teal-100 dark:from-slate-800 dark:to-teal-900 rounded-2xl p-6">
                 <div className="flex items-center space-x-4">
-                  <span className="text-4xl font-bold text-violet-600 dark:text-violet-400">
+                  <span className="text-4xl font-bold text-teal-600 dark:text-teal-400">
                     ₹{product.isOnSale && product.salePrice ? product.salePrice : product.price}
                   </span>
                   {product.isOnSale && product.salePrice && (
@@ -286,15 +298,15 @@ const ProductDetail = () => {
 
               {/* Enhanced Features */}
               {product.features && product.features.length > 0 && (
-                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-slate-800 dark:to-blue-900 rounded-2xl p-6">
-                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-cyan-700 dark:text-cyan-300">
+                <div className="bg-gradient-to-r from-teal-50 to-teal-100 dark:from-slate-800 dark:to-teal-900 rounded-2xl p-6">
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-teal-700 dark:text-teal-300">
                     <Sparkles className="w-5 h-5" />
                     Key Features
                   </h3>
                   <ul className="space-y-3">
                     {product.features.map((feature, index) => (
                       <li key={index} className="text-gray-700 dark:text-gray-300 flex items-start gap-3">
-                        <span className="text-cyan-500 text-xl">✨</span>
+                        <span className="text-teal-500 text-xl">✨</span>
                         <span className="leading-relaxed">{feature}</span>
                       </li>
                     ))}
@@ -307,11 +319,11 @@ const ProductDetail = () => {
                 <div className="space-y-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-2xl p-6">
                   <div className="flex items-center space-x-6">
                     <span className="font-semibold text-lg">Quantity:</span>
-                    <div className="flex items-center border-2 border-violet-200 dark:border-violet-700 rounded-xl overflow-hidden bg-white dark:bg-slate-700">
+                    <div className="flex items-center border-2 border-teal-200 dark:border-teal-700 rounded-xl overflow-hidden bg-white dark:bg-slate-700">
                       <button
                         onClick={() => handleQuantityChange(-1)}
                         disabled={quantity <= 1}
-                        className="p-3 hover:bg-violet-100 dark:hover:bg-violet-800 disabled:opacity-50 transition-colors duration-200"
+                        className="p-3 hover:bg-teal-100 dark:hover:bg-teal-800 disabled:opacity-50 transition-colors duration-200"
                       >
                         <Minus size={16} />
                       </button>
@@ -319,7 +331,7 @@ const ProductDetail = () => {
                       <button
                         onClick={() => handleQuantityChange(1)}
                         disabled={quantity >= product.stock}
-                        className="p-3 hover:bg-violet-100 dark:hover:bg-violet-800 disabled:opacity-50 transition-colors duration-200"
+                        className="p-3 hover:bg-teal-100 dark:hover:bg-teal-800 disabled:opacity-50 transition-colors duration-200"
                       >
                         <Plus size={16} />
                       </button>
@@ -329,7 +341,7 @@ const ProductDetail = () => {
                   <div className="flex space-x-4">
                     <Button
                       onClick={handleAddToCart}
-                      className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                      className="flex-1 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                     >
                       <ShoppingBag size={20} className="mr-2" />
                       Add to Cart
@@ -345,6 +357,7 @@ const ProductDetail = () => {
                     <Button
                       variant="secondary"
                       onClick={toggleWishlist}
+                      disabled={wishlistLoading}
                       className={`bg-white/80 dark:bg-slate-700/80 border-2 ${
                         wishlisted
                           ? "border-pink-500 text-pink-600 dark:text-pink-400"
@@ -367,8 +380,8 @@ const ProductDetail = () => {
                   <Shield size={20} className="text-blue-500" />
                   <span className="font-medium">2-year warranty included</span>
                 </div>
-                <div className="flex items-center space-x-3 text-purple-700 dark:text-purple-300">
-                  <RotateCcw size={20} className="text-purple-500" />
+                <div className="flex items-center space-x-3 text-teal-700 dark:text-teal-300">
+                  <RotateCcw size={20} className="text-teal-500" />
                   <span className="font-medium">30-day return policy</span>
                 </div>
               </div>
@@ -376,18 +389,25 @@ const ProductDetail = () => {
           </div>
 
           {/* Enhanced Product Details Tabs */}
-          <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-3xl overflow-hidden">
+          <div
+            className="rounded-3xl overflow-hidden"
+            style={{ background: "color-mix(in oklab, var(--color-fg) 4%, var(--color-bg))" }}
+          >
             {/* Enhanced Tab Navigation */}
-            <div className="flex space-x-0 bg-gradient-to-r from-violet-100 to-purple-100 dark:from-slate-700 dark:to-purple-800">
+            <div className="flex space-x-0 bg-gradient-to-r from-teal-100 to-teal-200 dark:from-slate-700 dark:to-teal-800">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 py-6 px-6 text-sm font-semibold transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-lg"
-                      : "text-gray-600 dark:text-gray-300 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-white/50 dark:hover:bg-slate-700/50"
-                  }`}
+                  className="flex-1 py-4 px-6 text-sm font-semibold transition-all duration-200"
+                  style={{
+                    color: activeTab === tab.id ? "var(--color-primary)" : "var(--color-muted)",
+                    background: activeTab === tab.id ? "var(--color-bg)" : "transparent",
+                    borderBottom:
+                      activeTab === tab.id
+                        ? "2px solid color-mix(in oklab, var(--color-primary) 60%, transparent)"
+                        : "2px solid transparent",
+                  }}
                 >
                   {tab.label}
                 </button>
@@ -428,8 +448,8 @@ const ProductDetail = () => {
                 <div className="space-y-8">
                   {/* Enhanced Review Form */}
                   {isAuthenticated && (
-                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-slate-700 dark:to-purple-800 p-8 rounded-2xl">
-                      <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-violet-700 dark:text-violet-300">
+                    <div className="bg-gradient-to-r from-teal-50 to-teal-100 dark:from-slate-700 dark:to-teal-800 p-8 rounded-2xl">
+                      <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-teal-700 dark:text-teal-300">
                         <Star className="w-6 h-6" />
                         Write a Review
                       </h3>
@@ -461,14 +481,14 @@ const ProductDetail = () => {
                             value={reviewForm.comment}
                             onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                             rows={4}
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white/50 dark:bg-slate-700/50 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all duration-200"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white/50 dark:bg-slate-700/50 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200"
                             placeholder="Share your thoughts about this product..."
                           />
                         </div>
                         <Button
                           type="submit"
                           loading={submittingReview}
-                          className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                          className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                         >
                           Submit Review
                         </Button>
@@ -508,7 +528,7 @@ const ProductDetail = () => {
                       ))
                     ) : (
                       <div className="text-center py-12">
-                        <div className="w-16 h-16 bg-gradient-to-r from-violet-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-16 h-16 bg-gradient-to-r from-teal-400 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
                           <Star className="w-8 h-8 text-white" />
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 text-lg">

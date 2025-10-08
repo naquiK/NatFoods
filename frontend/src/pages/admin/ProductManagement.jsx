@@ -27,7 +27,9 @@ const ProductManagement = () => {
     onSale: false,
     salePrice: "",
     specifications: [], // array of { key, value } for UI; convert to map when submitting
-    inBox: [], // array of strings
+    inBox: [],
+    taxRate: 10, //
+    extraCharge: 0, //
   })
 
   const { hasPermission } = useAuth()
@@ -59,13 +61,12 @@ const ProductManagement = () => {
         sub_category: formData.sub_category || undefined,
         brand: formData.brand || undefined,
         images: formData.images.map((img) => ({
-          url: img.url || img, // keep backward compatibility
+          url: img.url || img,
           public_id: img.public_id,
         })),
         isFeatured: !!formData.featured,
         isOnSale: !!formData.onSale,
         salePrice: formData.onSale && formData.salePrice ? Number.parseFloat(formData.salePrice) : undefined,
-        // specifications Map expects object {key:value}
         specifications:
           formData.specifications?.length > 0
             ? Object.fromEntries(
@@ -75,8 +76,9 @@ const ProductManagement = () => {
               )
             : {},
         inBox: Array.isArray(formData.inBox) ? formData.inBox.filter(Boolean) : [],
+        taxRate: formData.taxRate !== "" ? Number(formData.taxRate) : undefined, //
+        extraCharge: formData.extraCharge !== "" ? Number(formData.extraCharge) : undefined, //
       }
-
       if (editingProduct) {
         await api.put(`/api/admin/products/${editingProduct._id}`, payload)
       } else {
@@ -115,6 +117,8 @@ const ProductManagement = () => {
       salePrice: "",
       specifications: [],
       inBox: [],
+      taxRate: 10, //
+      extraCharge: 0, //
     })
     setEditingProduct(null)
     setShowModal(false)
@@ -138,6 +142,8 @@ const ProductManagement = () => {
         ? Object.entries(product.specifications).map(([key, value]) => ({ key, value }))
         : [],
       inBox: product.inBox || [],
+      taxRate: product.taxRate || 10, //
+      extraCharge: product.extraCharge || 0, //
     })
     setShowModal(true)
   }
@@ -540,6 +546,41 @@ const ProductManagement = () => {
                           border: "1px solid color-mix(in oklab, var(--color-fg) 14%, transparent)",
                         }}
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: "var(--color-muted)" }}>
+                          Tax Rate (%)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={formData.taxRate}
+                          onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
+                          className="w-full px-4 py-2 rounded-lg"
+                          style={{
+                            background: "color-mix(in oklab, var(--color-fg) 6%, transparent)",
+                            border: "1px solid color-mix(in oklab, var(--color-fg) 14%, transparent)",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: "var(--color-muted)" }}>
+                          Extra Charge (₹)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.extraCharge}
+                          onChange={(e) => setFormData({ ...formData, extraCharge: e.target.value })}
+                          className="w-full px-4 py-2 rounded-lg"
+                          style={{
+                            background: "color-mix(in oklab, var(--color-fg) 6%, transparent)",
+                            border: "1px solid color-mix(in oklab, var(--color-fg) 14%, transparent)",
+                          }}
+                        />
+                      </div>
                     </div>
 
                     <div>

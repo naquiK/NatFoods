@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { adminAPI } from "../../utils/api"
 import LoadingSpinner from "../../components/ui/LoadingSpinner"
 import Button from "../../components/ui/Button"
+import { Link } from "react-router-dom"
 
 const Orders = () => {
   const [orders, setOrders] = useState([])
@@ -100,6 +101,9 @@ const Orders = () => {
                     Total
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Address
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -130,7 +134,14 @@ const Orders = () => {
                       {order.items?.length || 0} items
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900 dark:text-zinc-100">
-                      ${order.totalAmount}
+                      ₹{Number(order.totalAmount).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700 dark:text-zinc-300 max-w-[240px]">
+                      <div className="truncate">
+                        {(order.shippingAddress?.address || "") +
+                          (order.shippingAddress?.city ? `, ${order.shippingAddress.city}` : "") +
+                          (order.shippingAddress?.postalCode ? ` ${order.shippingAddress.postalCode}` : "")}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -142,7 +153,13 @@ const Orders = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500 dark:text-zinc-400">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-2">
+                      <Link
+                        to={`/admin/orders/${order._id}`}
+                        className="text-sm border border-stone-300 rounded px-2 py-1 hover:bg-stone-50 dark:border-zinc-700"
+                      >
+                        Details
+                      </Link>
                       <select
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order._id, e.target.value)}

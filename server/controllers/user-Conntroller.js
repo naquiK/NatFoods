@@ -3,8 +3,7 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const crypto = require("crypto")
 const mailSender = require("../utils/mailSender")
-const { uploadImage } = require("../config/cloudinary")
-const cloudinary = require("../config/cloudinary")
+const { uploadImage, cloudinary } = require("../config/cloudinary")
 
 //register user
 const register = async (req, res) => {
@@ -65,8 +64,8 @@ const register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully. Please verify your email.",
-      data: { id: newUser._id, email: newUser.email },
+      message: " Please verify your email.",
+      data: { id: newUser._id },
     })
   } catch (error) {
     res.status(500).json({
@@ -119,28 +118,15 @@ const optVerification = async (req, res) => {
       })
     }
     user.isVerified = true
+    user.emailVerified = true
+    user.verificationCode = null
+    user.verificationCodeExpire = null
     await user.save()
-
-    const userEmail = user.email
-    const userPhone = user.phone
-
-    const algorithm = "aes-256-cbc"
-    const key = Buffer.from(process.env.AES_KEY, "hex")
-    const iv = Buffer.from(process.env.AES_IV, "hex")
-
-    const cipher = crypto.createCipheriv(algorithm, key, iv)
-    let encryptedEmail = cipher.update(userEmail, "utf-8", "hex")
-    encryptedEmail += cipher.final("hex")
-
-    let encryptedPhone = cipher.update(String(userPhone), "utf-8", "hex")
-    encryptedPhone += cipher.final("hex")
 
     const token = jwt.sign(
       {
         id: user._id,
         name: user.name,
-        phoneNo: encryptedPhone,
-        email: encryptedEmail,
       },
       process.env.JWT_SECRET,
       {
@@ -151,9 +137,7 @@ const optVerification = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "user verified",
-      data: {
-        token,
-      },
+      token,
     })
   } catch (error) {
     res.status(500).json({
@@ -712,7 +696,7 @@ const removeFromWishlist = async (req, res) => {
 module.exports = {
   register,
   optVerification,
-  forgetPassword: verifyResetOtp, // alias to new function for any legacy call
+  forgetPassword: verifyResetOtp,
   forgetPasswordOTP,
   login,
   editProfile,

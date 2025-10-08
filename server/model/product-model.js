@@ -153,6 +153,17 @@ const productSchema = new mongoose.Schema(
       default: 10,
       min: 0,
     },
+    taxRate: {
+      type: Number,
+      min: [0, "Tax rate cannot be negative"],
+      max: [100, "Tax rate cannot exceed 100%"],
+      default: 10, // default 10%
+    },
+    extraCharge: {
+      type: Number,
+      min: [0, "Extra charge cannot be negative"],
+      default: 0,
+    },
   },
   {
     timestamps: true,
