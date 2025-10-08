@@ -15,7 +15,7 @@ export const useSettings = () => {
 
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState({
-    siteName: "Nat-Organics",
+    siteName: "NatFoods",
     siteDescription: "Your premium online shopping destination",
     logo: null,
     contactInfo: { email: "", phone: "", address: "" },
