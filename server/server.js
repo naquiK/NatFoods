@@ -15,31 +15,30 @@ const app = express()
 connectDB()
 
 
-const normalize = (u) => (typeof u === 'string' ? u.replace(/\/$/, '') : u)
 const allowedOrigins = [
-  normalize(process.env.FRONTEND_URL) || 'http://localhost:5173',
-  'http://localhost:3000',
-  'https://nat-foods.vercel.app',
-].filter(Boolean)
-
-console.log('CORS allowed origins:', allowedOrigins)
+  "https://nat-foods.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+]
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (e.g. curl, server-to-server)
       if (!origin) return callback(null, true)
 
-      const normalizedOrigin = normalize(origin)
-      if (allowedOrigins.indexOf(normalizedOrigin) !== -1) {
-        return callback(null, true)
-      }
+      const isAllowed = allowedOrigins.some((allowed) =>
+        origin.startsWith(allowed)
+      )
 
-      console.warn('Blocked CORS request from origin:', origin)
-      return callback(new Error('Not allowed by CORS'))
+      if (isAllowed) {
+        callback(null, true)
+      } else {
+        console.warn("❌ Blocked by CORS:", origin)
+        callback(new Error("Not allowed by CORS"))
+      }
     },
     credentials: true,
-  }),
+  })
 )
 app.use(express.json({ limit: "50mb" }))
 app.use(express.urlencoded({ extended: true, limit: "50mb" }))
@@ -55,7 +54,7 @@ app.use("/api/cart", require("./router/cartRoute"))
 app.use("/api/orders", require("./router/orderRoute"))
 app.use("/api/settings", require("./router/settingsRoute"))
 app.use("/api/upload", require("./router/uploadRoute")) // Added upload routes for Cloudinary integration
-// app.use("/api/payment", require("./router/paymentRoute"))
+app.use("/api/payment", require("./router/paymentRoute"))
 
 // Health check
 app.get("/api/health", (req, res) => {
