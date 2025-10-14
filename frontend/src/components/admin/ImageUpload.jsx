@@ -12,6 +12,16 @@ const ImageUpload = ({ onUpload, multiple = false, accept = "image/*" }) => {
 
   const handleFiles = async (files) => {
     if (!files || files.length === 0) return
+    // Client-side max (should mirror server default or be configured via env)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+    // Check sizes upfront
+    for (const f of Array.from(files)) {
+      if (f.size > MAX_FILE_SIZE) {
+        alert(`File "${f.name}" is too large. Maximum allowed size is ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB.`)
+        return
+      }
+    }
 
     setUploading(true)
     try {

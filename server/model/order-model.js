@@ -72,6 +72,46 @@ const orderSchema = new mongoose.Schema(
     notes: String,
     expectedDeliveryDate: Date, // Added expectedDeliveryDate
     invoiceUrl: { type: String }, // Added invoiceUrl to store Cloudinary PDF URL
+    invoicePublicId: { type: String },
+    invoiceResourceType: { type: String, default: "raw" },
+    cancelReason: { type: String, default: "" },
+    paymentInfo: {
+      gateway: { type: String, enum: ["razorpay", "paypal", "card", "cod"] },
+      paymentId: { type: String, default: "" }, // e.g., razorpay_payment_id
+      gatewayOrderId: { type: String, default: "" }, // e.g., razorpay_order_id
+      signature: { type: String, default: "" }, // e.g., razorpay_signature
+      method: { type: String, default: "" }, // card/netbanking/wallet/upi
+      bank: { type: String, default: "" },
+      wallet: { type: String, default: "" },
+      vpa: { type: String, default: "" }, // upi id
+      cardLast4: { type: String, default: "" },
+      capturedAt: { type: Date },
+      amount: { type: Number, default: 0 },
+      currency: { type: String, default: "INR" },
+    },
+    returnRequested: {
+      type: Boolean,
+      default: false,
+    },
+    returnReason: { type: String, default: "" },
+    returnStatus: {
+      type: String,
+      enum: ["none", "pending", "accepted", "declined"],
+      default: "none",
+    },
+    returnResolvedAt: { type: Date },
+
+    exchangeRequested: {
+      type: Boolean,
+      default: false,
+    },
+    exchangeReason: { type: String, default: "" },
+    exchangeStatus: {
+      type: String,
+      enum: ["none", "pending", "accepted", "declined"],
+      default: "none",
+    },
+    exchangeResolvedAt: { type: Date },
   },
   {
     timestamps: true,
@@ -81,4 +121,3 @@ const orderSchema = new mongoose.Schema(
 const Order = mongoose.model("Order", orderSchema)
 
 module.exports = Order
- 

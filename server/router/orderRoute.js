@@ -7,6 +7,8 @@ const { authMiddleware } = require("../middleware/auth-middleware")
 const PDFDocument = require("pdfkit")
 const { generateAndUploadInvoice } = require("../utils/invoice")
 const fetch = require("node-fetch")
+const mongoose = require("mongoose")
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id)
 
 // helper to consistently derive userId across middleware shapes
 function getUserId(req) {
@@ -120,7 +122,7 @@ router.post("/", async (req, res) => {
 
     const expectedDeliveryDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
 
-    const order = await Order.create({
+    const baseOrder = {
       userId,
       items: orderItems,
       shippingAddress: normalizedShipping,
@@ -131,20 +133,22 @@ router.post("/", async (req, res) => {
       totalAmount,
       paymentStatus: paymentMethod === "razorpay" ? "paid" : "pending",
       expectedDeliveryDate,
-    })
+    }
+
+    if (paymentMethod === "cod") {
+      baseOrder.paymentInfo = {
+        gateway: "cod",
+        amount: totalAmount,
+        currency: "INR",
+      }
+    }
+
+    const order = await Order.create(baseOrder)
 
     // clear user's cart, non-blocking if cart not found
     await Cart.findOneAndUpdate({ userId }, { items: [], totalAmount: 0 }).catch(() => {})
 
-    // generate Cloudinary invoice asynchronously (don't block order creation)
-    ;(async () => {
-      try {
-        const url = await generateAndUploadInvoice(order)
-        await Order.findByIdAndUpdate(order._id, { invoiceUrl: url })
-      } catch (e) {
-        console.log("[v0] invoice generation error:", e?.message || e)
-      }
-    })()
+    // Removed auto invoice generation
 
     return res.status(201).json({ message: "Order created successfully", order })
   } catch (error) {
@@ -188,6 +192,10 @@ router.get("/", async (req, res) => {
 // Get single order
 router.get("/:id", async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      console.log("[v0] OrderGetError: invalid ObjectId", req.params.id)
+      return res.status(400).json({ message: "Invalid order id" })
+    }
     const userId = getUserId(req)
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
     const order = await Order.findOne({ _id: req.params.id, userId }).populate("items.productId", "name images")
@@ -234,14 +242,60 @@ router.put("/:id/cancel", async (req, res) => {
 // Generate invoice PDF
 router.get("/:id/invoice.pdf", async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      console.log("[v0] InvoiceGetError: invalid ObjectId", req.params.id)
+      return res.status(400).json({ message: "Invalid order id" })
+    }
     const userId = getUserId(req)
     if (!userId) return res.status(401).json({ message: "Unauthorized" })
     const order = await Order.findOne({ _id: req.params.id, userId }).populate("items.productId", "name images")
     if (!order) return res.status(404).json({ message: "Order not found" })
 
+    const disallowed = ["pending", "cancelled"]
+    if (!order.invoiceUrl && disallowed.includes(String(order.status).toLowerCase())) {
+      return res.status(403).json({
+        message: "Invoice will be available after the order is processed by admin.",
+        status: order.status,
+      })
+    }
+
     // If we already uploaded an invoice to Cloudinary, proxy it so Download works (same-origin attachment)
     if (order.invoiceUrl) {
       try {
+        // If we have Cloudinary metadata stored, prefer generating a signed URL to avoid 401s.
+        const { cloudinary } = require("../config/cloudinary")
+        if (order.invoicePublicId && cloudinary) {
+          try {
+            const publicId = order.invoicePublicId
+            const resourceType = order.invoiceResourceType || "raw"
+            // Prefer SDK helper if available
+            if (cloudinary.utils && typeof cloudinary.utils.download_url === "function") {
+              const signatureUrl = cloudinary.utils.download_url(publicId, {
+                resource_type: resourceType,
+                format: "pdf",
+              })
+              return res.redirect(signatureUrl)
+            }
+
+            // Fallback: construct a signed URL using api_sign_request (older SDKs)
+            if (cloudinary.utils && typeof cloudinary.utils.api_sign_request === "function") {
+              const timestamp = Math.floor(Date.now() / 1000)
+              const toSign = `public_id=${publicId}&resource_type=${resourceType}&timestamp=${timestamp}${cloudinary.config().api_secret}`
+              // api_sign_request expects the params object and api_secret separately; use it to create signature
+              const sig = cloudinary.utils.api_sign_request(
+                { public_id: publicId, resource_type: resourceType, timestamp },
+                cloudinary.config().api_secret,
+              )
+              const base = `https://res.cloudinary.com/${cloudinary.config().cloud_name}/${resourceType}/upload` // upload path works for downloads too
+              const signedUrl = `${base}/v${timestamp}/${publicId}.pdf?timestamp=${timestamp}&signature=${sig}&api_key=${cloudinary.config().api_key}`
+              return res.redirect(signedUrl)
+            }
+          } catch (sigErr) {
+            console.log("[v0] cloudinary signed url generation failed:", sigErr?.message)
+          }
+        }
+
+        // Fallback: proxy the stored URL (works if storage allows anonymous access or the URL is signed)
         const resp = await fetch(order.invoiceUrl)
         if (!resp.ok) {
           return res.status(502).json({ message: "Could not fetch invoice from storage" })
@@ -304,16 +358,85 @@ router.post("/:id/invoice", async (req, res) => {
     const order = await Order.findOne({ _id: req.params.id, userId })
     if (!order) return res.status(404).json({ message: "Order not found" })
 
-    if (order.invoiceUrl) {
-      return res.json({ invoiceUrl: order.invoiceUrl })
+    // enforce admin acceptance: allow when processing/shipped/delivered
+    const allowed = ["processing", "shipped", "delivered"]
+    if (!allowed.includes(order.status)) {
+      return res.status(403).json({
+        message: "Invoice can be generated only after the order is accepted by admin.",
+        status: order.status,
+      })
     }
 
-    const invoiceUrl = await generateAndUploadInvoice(order)
-    order.invoiceUrl = invoiceUrl
+    if (order.invoiceUrl && order.invoicePublicId) {
+      return res.json({ invoiceUrl: order.invoiceUrl, publicId: order.invoicePublicId })
+    }
+
+    const uploadRes = await generateAndUploadInvoice(order)
+    // uploadRes should be the full Cloudinary response
+    order.invoiceUrl = uploadRes.secure_url || uploadRes.url || uploadRes.secureUrl
+    order.invoicePublicId = uploadRes.public_id || uploadRes.publicId
+    order.invoiceResourceType = uploadRes.resource_type || "raw"
     await order.save()
-    res.json({ invoiceUrl })
+    res.json({ invoiceUrl: order.invoiceUrl, publicId: order.invoicePublicId })
   } catch (error) {
     res.status(500).json({ message: "Failed to create invoice", error: error.message })
+  }
+})
+
+// Add user return request
+router.post("/:id/return-request", async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      console.log("[v0] ReturnReqError: invalid ObjectId", req.params.id)
+      return res.status(400).json({ message: "Invalid order id" })
+    }
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const { reason = "" } = req.body || {}
+    console.log("[v0] ReturnReq received", { orderId: req.params.id, userId, hasReason: !!reason })
+
+    const order = await Order.findOne({ _id: req.params.id, userId })
+    if (!order) return res.status(404).json({ message: "Order not found" })
+    if (["cancelled"].includes(order.status)) return res.status(400).json({ message: "Cannot return cancelled orders" })
+
+    order.returnRequested = true
+    order.returnReason = String(reason || "").slice(0, 500)
+    order.returnStatus = "pending"
+    await order.save()
+    return res.json({ message: "Return requested", order })
+  } catch (e) {
+    console.log("[v0] ReturnReq exception", { msg: e?.message, stack: e?.stack })
+    return res.status(500).json({ message: "Server error", error: e.message })
+  }
+})
+
+// Add user exchange request
+router.post("/:id/exchange-request", async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      console.log("[v0] ExchangeReqError: invalid ObjectId", req.params.id)
+      return res.status(400).json({ message: "Invalid order id" })
+    }
+    const userId = getUserId(req)
+    if (!userId) return res.status(401).json({ message: "Unauthorized" })
+
+    const { reason = "" } = req.body || {}
+    console.log("[v0] ExchangeReq received", { orderId: req.params.id, userId, hasReason: !!reason })
+
+    const order = await Order.findOne({ _id: req.params.id, userId })
+    if (!order) return res.status(404).json({ message: "Order not found" })
+    if (["cancelled"].includes(order.status))
+      return res.status(400).json({ message: "Cannot exchange cancelled orders" })
+
+    order.exchangeRequested = true
+    order.exchangeReason = String(reason || "").slice(0, 500)
+    order.exchangeStatus = "pending"
+    await order.save()
+    return res.json({ message: "Exchange requested", order })
+  } catch (e) {
+    console.log("[v0] ExchangeReq exception", { msg: e?.message, stack: e?.stack })
+    return res.status(500).json({ message: "Server error", error: e.message })
   }
 })
 

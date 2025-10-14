@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useCart } from "../context/CartContext"
 import { useAuth } from "../context/AuthContext"
-import { api } from "../utils/api"
+import { api, paymentAPI } from "../utils/api"
 import Button from "../components/ui/Button"
 import LoadingSpinner from "../components/ui/LoadingSpinner"
 import AddressSection from "../components/checkout/address-section"
@@ -89,11 +89,11 @@ const Checkout = () => {
 
     const shippingNormalized = {
       fullName: shipping.fullName || user?.name || "",
-      address: shipping.address || shipping.address1 || "",
+      address: shipping.address || shipping.address1 || shipping.street || "",
       city: shipping.city || "",
-      postalCode: shipping.postalCode || shipping.zipCode || shipping.pinCode || "",
+      postalCode: shipping.postalCode || shipping.zipCode || shipping.pinCode || shipping.zip || "",
       country: shipping.country || "",
-      phone: shipping.phone || shipping.contact || "",
+      phone: shipping.phone || shipping.contact || shipping.contactPhone || "",
     }
 
     const missing = Object.entries({
@@ -162,8 +162,23 @@ const Checkout = () => {
           contact: getShippingForOrder().phone || "",
         },
         notes: { address: getShippingForOrder().address },
-        handler: async () => {
+        handler: async (resp) => {
           const created = await createOrderOnBackend("razorpay", "paid")
+          try {
+            await paymentAPI.saveRazorpayTxn({
+              razorpay_payment_id: resp?.razorpay_payment_id,
+              razorpay_order_id: resp?.razorpay_order_id,
+              razorpay_signature: resp?.razorpay_signature,
+              amount: data.amount,
+              currency: data.currency,
+              orderId: created?._id,
+              method: resp?.method,
+              bank: resp?.bank,
+              wallet: resp?.wallet,
+              vpa: resp?.vpa,
+              cardLast4: resp?.card_last4,
+            })
+          } catch {}
           clearCart()
           if (created?._id) window.location.href = `/order-success/${created._id}`
           else setOrderPlaced(true)

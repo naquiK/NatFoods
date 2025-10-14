@@ -28,7 +28,14 @@ const Orders = () => {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      await adminAPI.updateOrderStatus(orderId, status)
+      let reason
+      if (status === "cancelled") {
+        reason = window.prompt("Please provide a reason for cancellation:")
+        if (!reason || reason.trim().length < 3) {
+          return alert("A valid cancel reason is required.")
+        }
+      }
+      await adminAPI.updateOrderStatus(orderId, status, reason)
       fetchOrders()
     } catch (error) {
       console.error("Error updating order status:", error)
@@ -149,6 +156,20 @@ const Orders = () => {
                       >
                         {order.status}
                       </span>
+                      {(order.returnRequested || order.exchangeRequested) && (
+                        <div className="mt-2 space-x-2">
+                          {order.returnRequested && (
+                            <span className="inline-block text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800">
+                              Return req
+                            </span>
+                          )}
+                          {order.exchangeRequested && (
+                            <span className="inline-block text-xs px-2 py-0.5 rounded bg-sky-100 text-sky-800">
+                              Exchange req
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-500 dark:text-zinc-400">
                       {new Date(order.createdAt).toLocaleDateString()}
@@ -160,6 +181,14 @@ const Orders = () => {
                       >
                         Details
                       </Link>
+                      {(order.returnRequested || order.exchangeRequested) && (
+                        <Link
+                          to={`/admin/orders/${order._id}?review=requests`}
+                          className="text-sm rounded px-2 py-1 bg-stone-900 text-white hover:bg-stone-800"
+                        >
+                          Review
+                        </Link>
+                      )}
                       <select
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order._id, e.target.value)}

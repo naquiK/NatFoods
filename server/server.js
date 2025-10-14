@@ -5,6 +5,8 @@ require("dotenv").config()
 const connectDB = require("./DB/connectionDB")
 const path = require("path")
 const removedUnverifiedData = require("./authomation/removedUnverifiedData")
+const eventsRoute = require("./router/eventsRoute")
+const couponAdminRoute = require("./router/couponAdminRoute")
 
 // Start the cron job to remove unverified users
 removedUnverifiedData()
@@ -55,6 +57,8 @@ app.use("/api/orders", require("./router/orderRoute"))
 app.use("/api/settings", require("./router/settingsRoute"))
 app.use("/api/upload", require("./router/uploadRoute")) // Added upload routes for Cloudinary integration
 app.use("/api/payment", require("./router/paymentRoute"))
+app.use("/api/events", eventsRoute)
+app.use("/api/admin/coupons", couponAdminRoute)
 
 // Health check
 app.get("/api/health", (req, res) => {

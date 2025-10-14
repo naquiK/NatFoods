@@ -167,7 +167,8 @@ function buildPdfBuffer(order) {
 async function generateAndUploadInvoice(order) {
   const buffer = await buildPdfBuffer(order)
   const uploadRes = await uploadPdfToCloudinary({ buffer, orderId: order._id.toString() })
-  return uploadRes.secure_url
+  // Return the full upload response so callers can access public_id, resource_type, secure_url, etc.
+  return uploadRes
 }
 
 module.exports = { generateAndUploadInvoice, buildPdfBuffer }

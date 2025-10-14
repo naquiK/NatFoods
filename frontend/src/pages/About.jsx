@@ -26,9 +26,8 @@ const About = () => {
           <div>
             <h2 className="text-3xl font-bold text-stone-900 dark:text-white mb-6">Our Story</h2>
             <p className="text-stone-600 dark:text-zinc-400 mb-6 leading-relaxed">
-              Founded with a passion for quality and customer satisfaction, {settings?.siteName || "eKart"} has been
-              serving customers with premium products and exceptional service. We believe in creating meaningful
-              connections through commerce.
+              {settings?.aboutPage ||
+                `Founded with a passion for quality and customer satisfaction, ${settings?.siteName || "eKart"} has been serving customers with premium products and exceptional service.`}
             </p>
             <p className="text-stone-600 dark:text-zinc-400 leading-relaxed">
               Our carefully curated selection ensures that every product meets our high standards for quality,

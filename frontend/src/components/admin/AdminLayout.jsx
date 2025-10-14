@@ -99,6 +99,29 @@ const AdminLayout = ({ children }) => {
         </svg>
       ),
     },
+    {
+      name: "Coupons",
+      href: "/admin/coupons",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 7h10v10H7zM3 3h4v4H3zM17 17h4v4h-4z"
+          />
+        </svg>
+      ),
+    },
+    {
+      name: "Sales",
+      href: "/admin/sales",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18M7 13l3 3 7-7" />
+        </svg>
+      ),
+    },
   ]
 
   const handleLogout = () => {

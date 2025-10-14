@@ -90,6 +90,21 @@ const settingsSchema = new mongoose.Schema(
       type: [String],
       default: ["Flour", "Pulses", "Edible Oil"],
     },
+    privacyPolicy: {
+      type: String,
+      default: "We respect your privacy and are committed to protecting your personal data.",
+    },
+    shippingPolicy: {
+      type: String,
+      default: "Orders are processed within 1-2 business days. Delivery 3-7 business days.",
+    },
+    termsAndConditions: { type: String, default: "By using our services, you agree to our Terms & Conditions." },
+    returnsPolicy: {
+      type: String,
+      default: "Returns accepted within 7 days of delivery if items are unused and sealed.",
+    },
+    aboutPage: { type: String, default: "" },
+    contactPageIntro: { type: String, default: "" },
   },
   {
     timestamps: true,

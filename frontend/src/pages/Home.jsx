@@ -12,6 +12,7 @@ import CategoryPills from "../components/home/CategoryPills"
 import TestimonialStrip from "../components/home/TestimonialStrip"
 import BentoShowcase from "../components/home/BentoShowcase"
 import NeonCTA from "../components/home/NeonCTA"
+import EventsBar from "../components/home/EventsBar"
 
 import Hero from "../components/home/Hero"
 import Marquee from "../components/home/Marquee"
@@ -56,6 +57,8 @@ const Home = () => {
         {/* New Animated Hero */}
         <Hero />
       </div>
+
+      <EventsBar />
 
       {/* Colorful Marquee */}
       <Marquee />
@@ -113,7 +116,7 @@ const Home = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.6, delay: 0 }}
                 viewport={{ once: true }}
                 className="text-center mb-10"
               >

@@ -4,6 +4,7 @@ const Product = require("../model/product-model")
 const User = require("../model/userModel")
 const Order = require("../model/order-model")
 const Settings = require("../model/settings-model")
+const Sale = require("../model/sale-model")
 const { authMiddleware } = require("../middleware/auth-middleware")
 const { adminMiddleware } = require("../middleware/adminMiddleware")
 const { checkPermission } = require("../middleware/permission-middleware")
@@ -11,6 +12,8 @@ const { cloudinary } = require("../config/cloudinary")
 const PDFDocument = require("pdfkit")
 const fetch = require("node-fetch")
 const { generateAndUploadInvoice } = require("../utils/invoice")
+const AuditLog = require("../model/audit-log-model")
+const PaymentTransaction = require("../model/payment-transaction-model")
 
 // Apply auth and admin middleware to all routes
 router.use(authMiddleware, adminMiddleware)
@@ -82,33 +85,18 @@ router.get("/products", checkPermission("products", "view"), async (req, res) =>
   }
 })
 
-// Helper to normalize images input (array or JSON string)
-const normalizeImages = (input) => {
-  if (!input) return []
-  let arr = input
-  if (typeof input === "string") {
-    try {
-      arr = JSON.parse(input)
-    } catch {
-      return []
-    }
-  }
-  if (!Array.isArray(arr)) arr = [arr]
-  return arr
-    .filter(Boolean)
-    .map((img) => ({
-      url: img?.url || img?.path || img?.secure_url || null,
-      public_id: img?.public_id || img?.publicId || img?.filename || null,
-    }))
-    .filter((i) => i.url && i.public_id)
-}
-
 router.post("/products", checkPermission("products", "create"), async (req, res) => {
   try {
     const body = { ...req.body }
 
     // Normalize images
     body.images = normalizeImages(body.images)
+
+    // Validate that each image contains both cloudinary url and public_id
+    const invalid = (body.images || []).filter((img) => !img || !img.url || !img.public_id)
+    if (invalid.length) {
+      return res.status(400).json({ message: "All images must include 'url' and 'public_id' from Cloudinary. Upload images via /api/upload/image or /api/upload/images first." })
+    }
 
     const product = await Product.create(body)
     return res.status(201).json({ message: "Product created successfully", product })
@@ -183,6 +171,11 @@ router.put("/products/:id", checkPermission("products", "update"), async (req, r
     delete updatable.removeImageIds
 
     product.set({ ...updatable, images: newImages })
+    // Ensure saved images contain cloudinary url and public_id
+    const bad = (product.images || []).filter((img) => !img || !img.url || !img.public_id)
+    if (bad.length) {
+      return res.status(400).json({ message: "Some images are missing 'url' or 'public_id' (use the upload endpoint to obtain proper values)." })
+    }
     const saved = await product.save()
 
     return res.json({ message: "Product updated successfully", product: saved })
@@ -211,12 +204,12 @@ router.delete("/products/:id", checkPermission("products", "delete"), async (req
           ),
         )
       } catch (err) {
-        // log but do not block deletion if some images fail to delete
         console.log("Cloudinary delete error:", err?.message || err)
       }
     }
 
     await product.deleteOne()
+    logAction(req, "product.delete", { productId: req.params.id, imagesDeleted: publicIds.length })
     return res.json({ message: "Product and images deleted successfully" })
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message })
@@ -310,10 +303,13 @@ router.get("/orders/:id/invoice.pdf", checkPermission("orders", "view"), async (
 
     // If missing, build and upload then stream
     try {
-      const url = await generateAndUploadInvoice(order)
-      order.invoiceUrl = url
+      const uploadRes = await generateAndUploadInvoice(order)
+      // persist useful metadata for later signed-url generation / proxy
+      order.invoiceUrl = uploadRes?.secure_url || uploadRes?.url || uploadRes?.secureUrl
+      order.invoicePublicId = uploadRes?.public_id || uploadRes?.publicId
+      order.invoiceResourceType = uploadRes?.resource_type || "raw"
       await order.save()
-      const resp = await fetch(url)
+      const resp = await fetch(order.invoiceUrl)
       const ct = resp.headers.get("content-type") || "application/pdf"
       const buf = Buffer.from(await resp.arrayBuffer())
       res.setHeader("Content-Type", ct)
@@ -362,17 +358,257 @@ router.get("/orders/:id/invoice.pdf", checkPermission("orders", "view"), async (
 
 router.put("/orders/:id/status", checkPermission("orders", "update"), async (req, res) => {
   try {
-    const { status } = req.body
-    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true })
-
+    const { status, reason } = req.body
+    const order = await Order.findById(req.params.id)
     if (!order) {
       return res.status(404).json({ message: "Order not found" })
     }
+    order.status = status
+    if (status === "cancelled") {
+      if (!reason || String(reason).trim().length < 3) {
+        return res.status(400).json({ message: "Cancel reason is required for cancelling an order" })
+      }
+      order.cancelReason = String(reason).slice(0, 500)
+    }
+    const saved = await order.save()
 
-    res.json({ message: "Order status updated successfully", order })
+    logAction(req, "order.status.update", { orderId: order._id, status, reason: order.cancelReason || undefined })
+
+    res.json({ message: "Order status updated successfully", order: saved })
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message })
   }
 })
+
+router.get("/orders/:id/payment", checkPermission("orders", "view"), async (req, res) => {
+  try {
+    const { id } = req.params
+    const txns = await PaymentTransaction.find({ orderId: id }).sort({ createdAt: -1 })
+    return res.json({ transactions: txns })
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch payment details", error: error.message })
+  }
+})
+
+router.get("/orders/requests", checkPermission("orders", "view"), async (req, res) => {
+  try {
+    const orders = await Order.find({
+      $or: [{ returnRequested: true }, { exchangeRequested: true }],
+    })
+      .populate("userId", "name email")
+      .populate("items.productId", "name images price")
+      .sort({ createdAt: -1 })
+
+    res.json({ orders })
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+})
+
+router.put("/orders/:id/return-request", checkPermission("orders", "update"), async (req, res) => {
+  try {
+    const { action, adminNote } = req.body || {}
+    const order = await Order.findById(req.params.id)
+    if (!order) return res.status(404).json({ message: "Order not found" })
+    if (!order.returnRequested) return res.status(400).json({ message: "No return request on this order" })
+
+    if (action === "accept") {
+      // cancel order and restock
+      order.status = "cancelled"
+      order.returnStatus = "accepted"
+      order.returnResolvedAt = new Date()
+      order.cancelReason = adminNote ? String(adminNote).slice(0, 500) : order.cancelReason
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
+      }
+    } else if (action === "decline") {
+      order.returnStatus = "declined"
+      order.returnResolvedAt = new Date()
+    } else {
+      return res.status(400).json({ message: "Invalid action. Use 'accept' or 'decline'." })
+    }
+
+    // keep the audit trail that user requested once
+    order.returnRequested = false
+    await order.save()
+    logAction(req, "order.return.update", { orderId: order._id, action, adminNote })
+    res.json({ message: "Return request updated", order })
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+})
+
+router.put("/orders/:id/exchange-request", checkPermission("orders", "update"), async (req, res) => {
+  try {
+    const { action, adminNote } = req.body || {}
+    const order = await Order.findById(req.params.id)
+    if (!order) return res.status(404).json({ message: "Order not found" })
+    if (!order.exchangeRequested) return res.status(400).json({ message: "No exchange request on this order" })
+
+    if (action === "accept") {
+      order.status = "cancelled"
+      order.exchangeStatus = "accepted"
+      order.exchangeResolvedAt = new Date()
+      order.cancelReason = adminNote ? String(adminNote).slice(0, 500) : order.cancelReason
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } })
+      }
+    } else if (action === "decline") {
+      order.exchangeStatus = "declined"
+      order.exchangeResolvedAt = new Date()
+    } else {
+      return res.status(400).json({ message: "Invalid action. Use 'accept' or 'decline'." })
+    }
+
+    order.exchangeRequested = false
+    await order.save()
+    logAction(req, "order.exchange.update", { orderId: order._id, action, adminNote })
+    res.json({ message: "Exchange request updated", order })
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+})
+
+router.post("/sales", checkPermission("products", "update"), async (req, res) => {
+  try {
+    const { name, description, image, startAt, endAt, productIds = [], percentOff, salePrice } = req.body || {}
+    if (!name || !startAt || !endAt || !Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ message: "name, startAt, endAt, and productIds[] are required to create a sale." })
+    }
+
+    // Apply sale to products
+    const products = await Product.find({ _id: { $in: productIds } })
+    const ops = []
+    for (const p of products) {
+      const next = { isOnSale: true }
+      if (typeof salePrice === "number") {
+        next.salePrice = salePrice
+      } else if (typeof percentOff === "number") {
+        const computed = Math.max(0, Math.round(p.price * (1 - percentOff / 100)))
+        next.salePrice = computed
+      }
+      ops.push(Product.updateOne({ _id: p._id }, { $set: next }))
+    }
+    await Promise.all(ops)
+
+    const saleDoc = await Sale.create({
+      name,
+      description,
+      image: image?.url || image?.public_id ? image : undefined,
+      startAt: new Date(startAt),
+      endAt: new Date(endAt),
+      productIds,
+      percentOff,
+      salePrice,
+      isActive: true,
+    })
+
+    return res.status(201).json({ message: "Sale created and applied", sale: saleDoc, count: ops.length })
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to create sale", error: error.message })
+  }
+})
+
+router.get("/sales", checkPermission("products", "view"), async (req, res) => {
+  try {
+    const now = new Date()
+    const sales = await Sale.find().sort({ createdAt: -1 })
+
+    // Auto-expire: if sale ended but still active, revert product flags
+    const expired = sales.filter((s) => s.isActive && s.endAt < now)
+    for (const s of expired) {
+      await Product.updateMany({ _id: { $in: s.productIds } }, { $set: { isOnSale: false }, $unset: { salePrice: "" } })
+      s.isActive = false
+      await s.save()
+    }
+
+    res.json({ sales })
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch sales", error: error.message })
+  }
+})
+
+router.put("/sales/bulk", checkPermission("products", "update"), async (req, res) => {
+  try {
+    const { productIds = [], salePrice, percentOff, onSale } = req.body || {}
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json({ message: "productIds array is required" })
+    }
+
+    const products = await Product.find({ _id: { $in: productIds } })
+    const ops = []
+
+    for (const p of products) {
+      const next = { isOnSale: !!onSale }
+      if (onSale === false) {
+        next.salePrice = undefined
+      } else if (onSale === true) {
+        if (typeof salePrice === "number") {
+          next.salePrice = salePrice
+        } else if (typeof percentOff === "number") {
+          const computed = Math.max(0, Math.round(p.price * (1 - percentOff / 100)))
+          next.salePrice = computed
+        }
+      }
+      ops.push(Product.updateOne({ _id: p._id }, { $set: next }))
+    }
+
+    await Promise.all(ops)
+    return res.json({ message: "Sale settings updated", count: ops.length })
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to update sales", error: error.message })
+  }
+})
+
+// helper to log actions
+function logAction(req, action, meta = {}) {
+  try {
+    const user = req.user || {}
+    AuditLog.create({
+      userId: user._id,
+      role: user.role?.name || (user.isAdmin ? "admin" : undefined),
+      action,
+      meta,
+      ip: req.ip,
+      path: req.originalUrl,
+    }).catch(() => {})
+  } catch {}
+}
+
+router.get("/logs", checkPermission("logs", "view"), async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query
+    const logs = await AuditLog.find()
+      .populate("userId", "name email")
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+    const total = await AuditLog.countDocuments()
+    res.json({ logs, total, totalPages: Math.ceil(total / limit), currentPage: Number(page) })
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+})
+
+// Helper to normalize images input (array or JSON string)
+const normalizeImages = (input) => {
+  if (!input) return []
+  let arr = input
+  if (typeof input === "string") {
+    try {
+      arr = JSON.parse(input)
+    } catch {
+      return []
+    }
+  }
+  if (!Array.isArray(arr)) arr = [arr]
+  return arr
+    .filter(Boolean)
+    .map((img) => ({
+      url: img?.url || img?.path || img?.secure_url || null,
+      public_id: img?.public_id || img?.publicId || img?.filename || null,
+    }))
+    .filter((i) => i.url && i.public_id)
+}
 
 module.exports = router

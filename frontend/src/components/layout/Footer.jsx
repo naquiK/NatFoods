@@ -1,5 +1,5 @@
 "use client"
-import { Link, NavLink } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react"
 import { useSettings } from "../../context/SettingsContext"
@@ -16,13 +16,13 @@ const Footer = () => {
     ],
     support: [
       { name: "Help Center", href: "#" },
-      { name: "Shipping Info", href: "#" },
-      { name: "Returns", href: "#" },
+      { name: "Shipping Info", href: "/shipping-policy" },
+      { name: "Returns", href: "/returns" },
       { name: "Size Guide", href: "#" },
     ],
     legal: [
-      { name: "Privacy Policy", href: "#" },
-      { name: "Terms of Service", href: "#" },
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
       { name: "Cookie Policy", href: "#" },
       { name: "Accessibility", href: "#" },
     ],
@@ -120,7 +120,6 @@ const Footer = () => {
             {/* Support Links */}
             <div>
               <h3 className="text-lg font-semibold mb-6">Support</h3>
-              <ul><NavLink to={"/admin"}> a </NavLink></ul>
               <ul className="space-y-4">
                 {footerLinks.support.map((link) => (
                   <li key={link.name}>

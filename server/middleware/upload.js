@@ -1,15 +1,8 @@
 const multer = require("multer")
 const { CloudinaryStorage } = require("multer-storage-cloudinary")
-const cloudinary = require("cloudinary").v2
+const { cloudinary } = require("../config/cloudinary")
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dv2armexn",
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
-
-// Configure Cloudinary storage for multer
+// Configure Cloudinary storage for multer using the centrally configured cloudinary instance
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -19,10 +12,13 @@ const storage = new CloudinaryStorage({
   },
 })
 
+const DEFAULT_MAX = 10 * 1024 * 1024
+const MAX_FILE_SIZE = Number(process.env.UPLOAD_MAX_FILE_SIZE || process.env.MAX_UPLOAD_SIZE || DEFAULT_MAX)
+
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: MAX_FILE_SIZE, // configurable limit
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "video/mp4", "video/mov"]

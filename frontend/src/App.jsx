@@ -28,6 +28,10 @@ import ResetPassword from "./pages/ResetPassword"
 import VerifyOTP from "./pages/VerifyOTP"
 import OrderSuccess from "./pages/OrderSuccess"
 import OrderDetails from "./pages/OrderDetails"
+import Terms from "./pages/Terms"
+import Privacy from "./pages/Privacy"
+import ShippingPolicy from "./pages/ShippingPolicy"
+import Returns from "./pages/Returns"
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard"
@@ -46,6 +50,8 @@ import { SettingsProvider } from "./context/SettingsContext"
 // Route Guards
 import ProtectedRoute from "./components/auth/ProtectedRoute"
 import AdminRoute from "./components/auth/AdminRoute"
+import AdminCoupons from "./pages/admin/Coupons"
+import AdminSales from "./pages/admin/Sales"
 
 function App() {
   const [showEntry, setShowEntry] = useState(() => {
@@ -94,6 +100,10 @@ function App() {
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/verify-otp" element={<VerifyOTP />} />
                       <Route path="/order-success/:id" element={<OrderSuccess />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                      <Route path="/returns" element={<Returns />} />
 
                       {/* User Order Details */}
                       <Route
@@ -149,7 +159,24 @@ function App() {
                           <AdminRoute>
                             <ProductManagement />
                           </AdminRoute>
+                          
                         }
+                      />
+                      <Route
+                      path="/admin/coupons"
+                      element={
+                        <AdminRoute>
+                          <AdminCoupons/>
+                          </AdminRoute>
+                      }
+                      />
+                      <Route
+                      path="/admin/sales"
+                      element={
+                        <AdminRoute>
+                          <AdminSales/>
+                          </AdminRoute>
+                      }
                       />
                       <Route
                         path="/admin/orders"

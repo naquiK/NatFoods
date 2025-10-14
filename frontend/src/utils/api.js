@@ -10,7 +10,19 @@ const RESOLVE_VITE =
     ? import.meta.env.VITE_API_URL
     : undefined
 
-const API_BASE_URL = RESOLVE_NEXT_PUBLIC || RESOLVE_VITE || "http://localhost:5000"
+// v0 dev safeguard: if base is localhost:3000 (frontend), prefer same-origin
+const deriveDevBase = () => {
+  if (typeof window !== "undefined") {
+    const envBase = RESOLVE_NEXT_PUBLIC || RESOLVE_VITE
+    // Prefer same-origin when no explicit env is provided (works with dev proxy/rewrite)
+    if (!envBase) return window.location.origin
+    return envBase
+  }
+  return RESOLVE_NEXT_PUBLIC || RESOLVE_VITE || ""
+}
+
+const API_BASE_URL = deriveDevBase()
+console.log("[v0] API_BASE_URL:", API_BASE_URL) // debug: remove after verifying
 
 // Export API_BASE_URL and document env usage
 export const BASE_URL = API_BASE_URL
@@ -83,12 +95,26 @@ export const adminAPI = {
   deleteProduct: (id) => api.delete(`/api/admin/products/${id}`),
   getUsers: (params) => api.get("/api/admin/users", { params }),
   getOrders: (params) => api.get("/api/admin/orders", { params }),
-  updateOrderStatus: (id, status) => api.put(`/api/admin/orders/${id}/status`, { status }),
+  updateOrderStatus: (id, status, reason) => api.put(`/api/admin/orders/${id}/status`, { status, reason }),
   getOrder: (id) => api.get(`/api/admin/orders/${id}`),
   getOrderInvoice: (id) =>
     api.get(`/api/admin/orders/${id}/invoice.pdf`, {
       responseType: "blob",
     }),
+  getOrderPayment: (id) => api.get(`/api/admin/orders/${id}/payment`),
+
+  getCoupons: () => api.get("/api/admin/coupons"),
+  createCoupon: (data) => api.post("/api/admin/coupons", data),
+  updateCoupon: (id, data) => api.put(`/api/admin/coupons/${id}`, data),
+  deleteCoupon: (id) => api.delete(`/api/admin/coupons/${id}`),
+
+  bulkSales: (payload) => api.put("/api/admin/sales/bulk", payload),
+  getRequestOrders: () => api.get("/api/admin/orders/requests"),
+  decideReturn: (id, action, adminNote) => api.put(`/api/admin/orders/${id}/return-request`, { action, adminNote }),
+  decideExchange: (id, action, adminNote) => api.put(`/api/admin/orders/${id}/exchange-request`, { action, adminNote }),
+
+  createSale: (payload) => api.post("/api/admin/sales", payload),
+  listSales: () => api.get("/api/admin/sales"),
 }
 
 export const settingsAPI = {
@@ -112,10 +138,39 @@ export const wishlistAPI = {
 export const ordersAPI = {
   list: (params) => api.get("/api/orders", { params }),
   get: (id) => api.get(`/api/orders/${id}`),
-  downloadInvoice: (id) =>
-    api.get(`/api/orders/${id}/invoice.pdf`, {
-      responseType: "blob",
-    }),
+  downloadInvoice: async (id) => {
+    try {
+      return await api.get(`/api/orders/${id}/invoice.pdf`, { responseType: "blob" })
+    } catch (e) {
+      if (e?.response?.status === 403) {
+        try {
+          await api.post(`/api/orders/${id}/invoice`)
+          return await api.get(`/api/orders/${id}/invoice.pdf`, { responseType: "blob" })
+        } catch {
+          // fall through to throw original error
+        }
+      }
+      throw e
+    }
+  },
+  requestReturn: (id, reason) => api.post(`/api/orders/${id}/return-request`, { reason }),
+  requestExchange: (id, reason) => api.post(`/api/orders/${id}/exchange-request`, { reason }),
+}
+
+export const paymentAPI = {
+  saveRazorpayTxn: (payload) => api.post("/api/payment/razorpay/transactions", payload),
+}
+
+export const profileAPI = {
+  uploadPicture: (file) => {
+    const fd = new FormData()
+    fd.append("profilePic", file)
+    return api.post("/api/auth/profile/picture", fd, { headers: { "Content-Type": "multipart/form-data" } })
+  },
+}
+
+export const eventsAPI = {
+  list: () => api.get("/api/events"),
 }
 
 export { api }

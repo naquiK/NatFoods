@@ -1,6 +1,5 @@
 const mongoose = require("mongoose")
 
-
 const roleSchema = new mongoose.Schema(
   {
     name: {
@@ -27,6 +26,18 @@ const roleSchema = new mongoose.Schema(
       },
       users: {
         view: { type: Boolean, default: false },
+        update: { type: Boolean, default: false },
+        delete: { type: Boolean, default: false },
+      },
+      events: {
+        view: { type: Boolean, default: false },
+        create: { type: Boolean, default: false },
+        update: { type: Boolean, default: false },
+        delete: { type: Boolean, default: false },
+      },
+      coupons: {
+        view: { type: Boolean, default: false },
+        create: { type: Boolean, default: false },
         update: { type: Boolean, default: false },
         delete: { type: Boolean, default: false },
       },
@@ -77,6 +88,8 @@ roleSchema.statics.getAdminRole = async function () {
         products: { view: true, create: true, update: true, delete: true },
         orders: { view: true, update: true, delete: true },
         users: { view: true, update: true, delete: true },
+        events: { view: true, create: true, update: true, delete: true },
+        coupons: { view: true, create: true, update: true, delete: true },
         roles: { view: true, create: true, update: true, delete: true },
         settings: { view: true, update: true },
         dashboard: { view: true },
@@ -101,6 +114,8 @@ roleSchema.statics.getModeratorRole = async function () {
         products: { view: true, create: true, update: true, delete: false },
         orders: { view: true, update: true, delete: false },
         users: { view: true, update: false, delete: false },
+        events: { view: false, create: false, update: false, delete: false },
+        coupons: { view: false, create: false, update: false, delete: false },
         roles: { view: false, create: false, update: false, delete: false },
         settings: { view: false, update: false },
         dashboard: { view: true },

@@ -41,7 +41,8 @@ const Contact = () => {
             Get in Touch
           </h1>
           <p className="text-xl text-stone-600 dark:text-zinc-400 text-balance">
-            We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            {settings?.contactPageIntro ||
+              "We'd love to hear from you. Send us a message and we'll respond as soon as possible."}
           </p>
         </div>
 
@@ -170,13 +171,7 @@ const Contact = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                         />
                       </svg>
                     </div>

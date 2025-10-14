@@ -38,11 +38,18 @@ const SiteSettings = () => {
     homepageTaglines: [],
     homepageAbout: "",
     homepageCategories: [],
+    privacyPolicy: "",
+    shippingPolicy: "",
+    termsAndConditions: "",
+    returnsPolicy: "",
+    aboutPage: "",
+    contactPageIntro: "",
   })
 
   useEffect(() => {
     if (settings) {
-      setFormData({
+      setFormData((prev) => ({
+        ...prev,
         siteName: settings.siteName || "",
         siteDescription: settings.siteDescription || "",
         logo: settings.logo?.url || "",
@@ -71,7 +78,13 @@ const SiteSettings = () => {
         homepageTaglines: settings.homepageTaglines || [],
         homepageAbout: settings.homepageAbout || "",
         homepageCategories: settings.homepageCategories || [],
-      })
+        privacyPolicy: settings.privacyPolicy || "",
+        shippingPolicy: settings.shippingPolicy || "",
+        termsAndConditions: settings.termsAndConditions || "",
+        returnsPolicy: settings.returnsPolicy || "",
+        aboutPage: settings.aboutPage || "",
+        contactPageIntro: settings.contactPageIntro || "",
+      }))
     }
   }, [settings])
 
@@ -101,6 +114,12 @@ const SiteSettings = () => {
         homepageTaglines: formData.homepageTaglines,
         homepageAbout: formData.homepageAbout,
         homepageCategories: formData.homepageCategories,
+        privacyPolicy: formData.privacyPolicy,
+        shippingPolicy: formData.shippingPolicy,
+        termsAndConditions: formData.termsAndConditions,
+        returnsPolicy: formData.returnsPolicy,
+        aboutPage: formData.aboutPage,
+        contactPageIntro: formData.contactPageIntro,
       }
       const res = await settingsAPI.update(payload)
       updateSettings(res.data.settings)
@@ -396,6 +415,79 @@ const SiteSettings = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   placeholder="ecommerce, online store, products"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Policies & Pages */}
+          <div className="bg-white rounded-xl shadow-sm border border-stone-200 p-6">
+            <h2 className="text-xl font-semibold text-stone-900 mb-6">Policies & Pages</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Privacy Policy</label>
+                <textarea
+                  name="privacyPolicy"
+                  value={formData.privacyPolicy}
+                  onChange={handleChange}
+                  rows={5}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Your Privacy Policy content..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Shipping Policy</label>
+                <textarea
+                  name="shippingPolicy"
+                  value={formData.shippingPolicy}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Your Shipping Policy content..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Terms & Conditions</label>
+                <textarea
+                  name="termsAndConditions"
+                  value={formData.termsAndConditions}
+                  onChange={handleChange}
+                  rows={5}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Your Terms & Conditions..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Returns Policy</label>
+                <textarea
+                  name="returnsPolicy"
+                  value={formData.returnsPolicy}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Your Returns Policy content..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">About Page Text</label>
+                <textarea
+                  name="aboutPage"
+                  value={formData.aboutPage}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="About page content..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Contact Page Intro</label>
+                <textarea
+                  name="contactPageIntro"
+                  value={formData.contactPageIntro}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  placeholder="Contact page short intro..."
                 />
               </div>
             </div>

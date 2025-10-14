@@ -354,57 +354,80 @@ const getInfo = async (req, res) => {
 
 //updatating profile
 const editProfile = async (req, res) => {
-  const { name, email, phone } = req.body
-  const token = req.headers["authorization"]?.split(" ")[1]
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized",
-    })
-  }
+  try {
+    const { name, email, phone } = req.body
 
-  // Prefer req.user (set by authMiddleware), else fallback to decoded token id/userId
-  const decoded = jwt.verify(token, process.env.JWT_SECRET)
-  const userId = (req.user && (req.user.id || req.user._id?.toString())) || decoded.id || decoded.userId
+    // Prefer req.user (set by authMiddleware) when available
+    let userId = req.user && (req.user.id || req.user._id?.toString())
 
-  const user = await User.findById(userId)
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    })
-  }
-
-  if (req.file) {
-    // Delete last profile from cloudinary
-    if (user.profilePic && user.profilePic.publicId) {
-      await cloudinary.uploader.destroy(user.profilePic.publicId)
+    // If not available, try to read and verify token but don't throw uncaught errors
+    if (!userId) {
+      const auth = req.headers["authorization"]
+      if (!auth) return res.status(401).json({ success: false, message: "Unauthorized" })
+      const token = auth.split(" ")[1]
+      if (!token) return res.status(401).json({ success: false, message: "Unauthorized" })
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        userId = decoded.userId || decoded.id || decoded._id
+      } catch (err) {
+        return res.status(401).json({ success: false, message: "Invalid or expired token" })
+      }
     }
-    const { url, publicId } = await uploadImage(req.file.path)
-    user.profilePic = {
-      url,
-      publicId,
+
+    const user = await User.findById(userId)
+    if (!user) return res.status(404).json({ success: false, message: "User not found" })
+
+    // Check uniqueness if email/phone are being changed
+    if (email && email !== user.email) {
+      const exists = await User.findOne({ email })
+      if (exists) return res.status(400).json({ success: false, message: "Email already in use" })
     }
+    if (phone && phone !== user.phone) {
+      const exists = await User.findOne({ phone })
+      if (exists) return res.status(400).json({ success: false, message: "Phone already in use" })
+    }
+
+    if (req.file) {
+      try {
+        // Delete last profile from cloudinary if present
+        const prevPublicId = user.profilePic?.publicId || user.profilePic?.public_id
+        if (prevPublicId) {
+          await cloudinary.uploader.destroy(prevPublicId).catch(() => {})
+        }
+
+        // Upload new image and normalize fields
+        const uploadRes = await uploadImage(req.file.path)
+        const url = uploadRes?.url || uploadRes?.secure_url || uploadRes?.path || req.file.path
+        const publicId = uploadRes?.publicId || uploadRes?.public_id || req.file.filename || req.file.public_id
+        user.profilePic = { url, publicId }
+      } catch (err) {
+        console.log("[v0] profile pic upload failed:", err?.message)
+        return res.status(500).json({ success: false, message: "Failed to upload profile picture" })
+      }
+    }
+
+    if (name) user.name = name
+    if (email) user.email = email
+    if (phone) user.phone = phone
+
+    await user.save()
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.isAdmin ? "admin" : "user",
+        profilePicture: user.profilePic?.url,
+      },
+    })
+  } catch (error) {
+    console.error("[v0] editProfile error:", error?.message)
+    return res.status(500).json({ success: false, message: "Server error", error: error.message })
   }
-
-  if (name) user.name = name
-  if (email) user.email = email
-  if (phone) user.phone = phone
-
-  await user.save()
-
-  return res.status(200).json({
-    success: true,
-    message: "Profile updated successfully",
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.isAdmin ? "admin" : "user",
-      profilePicture: user.profilePic?.url,
-    },
-  })
 }
 
 //changing password
@@ -463,42 +486,52 @@ const changePassword = async (req, res) => {
 const uploadProfilePicture = async (req, res) => {
   try {
     if (!req.file) {
+      console.log(" uploadProfilePicture missing req.file")
       return res.status(400).json({
         success: false,
         message: "No image file provided.",
       })
     }
-
-    const user = await User.findById(req.user.id)
+    const user = await User.findById(req.user.id || req.user._id)
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      })
+      return res.status(404).json({ success: false, message: "User not found." })
+    }
+    // CloudinaryStorage sets: path (url), filename (public_id)
+    const url = req.file.path || req.file.secure_url || req.file.url || "" // normalize url fields
+    const publicId = req.file.filename || req.file.public_id || req.file.key || req.file.originalname || "" // normalize id fields
+
+    if (!url || !publicId) {
+      console.log(" uploadProfilePicture missing returned identifiers", { file: req.file })
+      return res.status(500).json({ success: false, message: "Upload provider did not return URL/public_id" })
     }
 
-    // Upload new image to Cloudinary
-    const result = await uploadImage(req.file.buffer, "profile_pictures")
-
-    // Update user's profilePic field
-    user.profilePic = {
-      url: result.secure_url,
-      publicId: result.public_id,
+    // delete previous pic if present
+    if (user.profilePic?.publicId) {
+      try {
+        await cloudinary.uploader.destroy(user.profilePic.publicId)
+      } catch (err) {
+        console.log(" previous profilePic destroy failed:", err?.message)
+      }
     }
+    user.profilePic = { url, publicId }
     await user.save()
-
-    res.status(200).json({
+    // Return a normalized shape to the client (profilePicture) plus the updated user object
+    return res.status(200).json({
       success: true,
-      message: "Profile picture uploaded successfully.",
+      message: "Profile picture updated.",
       profilePic: user.profilePic,
+      profilePicture: user.profilePic?.url,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profilePicture: user.profilePic?.url,
+      },
     })
   } catch (error) {
-    console.error("Upload profile picture error:", error)
-    res.status(500).json({
-      success: false,
-      message: "Failed to upload profile picture.",
-      error: error.message,
-    })
+    console.error(" Upload profile picture error:", error?.message)
+    res.status(500).json({ success: false, message: "Failed to upload profile picture.", error: error.message })
   }
 }
 

@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 
 const { authMiddleware } = require("../middleware/auth-middleware")
-const upload = require("../middleware/multer-middleware")
+const { upload, cloudinary } = require("../middleware/upload")
 const {
   register,
   login,
@@ -20,20 +20,21 @@ const {
   addToWishlist, // import
   removeFromWishlist,
   optVerification, // import
+  uploadProfilePicture, // import
 } = require("../controllers/user-Conntroller")
 
 // Public routes
 router.post("/register", register)
-router.post("/verify-otp/:id", optVerification) 
+router.post("/verify-otp/:id", optVerification)
 router.post("/login", login)
 router.post("/forgot-password", forgetPasswordOTP)
-router.post("/verify-reset-otp", verifyResetOtp) 
-router.post("/reset-password", resetPassword) 
+router.post("/verify-reset-otp", verifyResetOtp)
+router.post("/reset-password", resetPassword)
 
 // Protected routes
 router.get("/profile", authMiddleware, getInfo)
 router.put("/profile-update", authMiddleware, editProfile)
-router.post("/profile/picture", authMiddleware, upload.single("profilePic"))
+router.post("/profile/picture", authMiddleware, upload.single("profilePic"), uploadProfilePicture)
 
 // Address routes
 router.post("/addresses", authMiddleware, addAddress)

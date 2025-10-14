@@ -11,6 +11,10 @@ export default function AdminOrderDetails() {
   const navigate = useNavigate()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [paymentData, setPaymentData] = useState(null)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [resolving, setResolving] = useState(false)
 
   const steps = ["pending", "processing", "shipped", "delivered"]
   const currentIndex = Math.max(0, steps.indexOf((order?.status || "").toLowerCase()))
@@ -42,6 +46,40 @@ export default function AdminOrderDetails() {
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error("[v0] Admin invoice download error:", e?.message)
+    }
+  }
+
+  const openPaymentDetails = async () => {
+    setPaymentLoading(true)
+    try {
+      const res = await adminAPI.getOrderPayment(id)
+      setPaymentData(res.data?.transactions?.[0] || null)
+      setPaymentOpen(true)
+    } catch (e) {
+      console.error("[v0] Admin payment details fetch error:", e?.message)
+      alert("Failed to load payment details.")
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const decideRequest = async (type, action) => {
+    try {
+      setResolving(true)
+      const adminNote = window.prompt(`Add a note for ${action} ${type}? (optional)`) || ""
+      if (type === "return") {
+        await adminAPI.decideReturn(id, action, adminNote)
+      } else {
+        await adminAPI.decideExchange(id, action, adminNote)
+      }
+      const res = await adminAPI.getOrder(id)
+      setOrder(res.data)
+      alert(`${type} ${action}ed successfully`)
+    } catch (e) {
+      console.error("[v0] Admin request decision error:", e?.message)
+      alert("Failed to update request")
+    } finally {
+      setResolving(false)
     }
   }
 
@@ -186,8 +224,154 @@ export default function AdminOrderDetails() {
             </p>
             <p>{addr.country}</p>
           </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-xl p-6">
+            <h2 className="text-lg font-semibold mb-3">Payment</h2>
+            <div className="text-sm text-stone-600 dark:text-zinc-400 space-y-1">
+              <p>Method: {order?.paymentInfo?.gateway || order?.paymentMethod}</p>
+              {order?.paymentInfo?.paymentId && <p>Payment ID: {order.paymentInfo.paymentId}</p>}
+              {order?.paymentInfo?.gatewayOrderId && <p>Gateway Order: {order.paymentInfo.gatewayOrderId}</p>}
+              {order?.paymentStatus && <p>Status: {order.paymentStatus}</p>}
+            </div>
+            <button
+              onClick={openPaymentDetails}
+              disabled={paymentLoading}
+              className="mt-4 px-3 py-2 rounded bg-stone-900 text-white hover:bg-stone-800 disabled:opacity-60"
+            >
+              {paymentLoading ? "Loading..." : "View Payment Details"}
+            </button>
+            {order?.cancelReason && (
+              <p className="text-sm text-red-600 dark:text-red-400 mt-3">Cancel Reason: {order.cancelReason}</p>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-xl p-6">
+            <h2 className="text-lg font-semibold mb-3">Return / Exchange Requests</h2>
+            {order.returnRequested || order.exchangeRequested ? (
+              <>
+                {order.returnRequested && (
+                  <div className="mb-4">
+                    <p className="text-sm text-stone-700 dark:text-zinc-300">
+                      Return Reason: {order.returnReason || "-"}
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        disabled={resolving}
+                        onClick={() => decideRequest("return", "accept")}
+                        className="px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                      >
+                        Accept Return (cancel order)
+                      </button>
+                      <button
+                        disabled={resolving}
+                        onClick={() => decideRequest("return", "decline")}
+                        className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                      >
+                        Decline Return
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {order.exchangeRequested && (
+                  <div>
+                    <p className="text-sm text-stone-700 dark:text-zinc-300">
+                      Exchange Reason: {order.exchangeReason || "-"}
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        disabled={resolving}
+                        onClick={() => decideRequest("exchange", "accept")}
+                        className="px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                      >
+                        Accept Exchange (cancel order)
+                      </button>
+                      <button
+                        disabled={resolving}
+                        onClick={() => decideRequest("exchange", "decline")}
+                        className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                      >
+                        Decline Exchange
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-stone-600 dark:text-zinc-400">No pending requests.</p>
+            )}
+          </div>
         </div>
       </div>
+
+      {paymentOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4" role="dialog" aria-modal>
+          <div className="w-full max-w-lg rounded-xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Payment Details</h3>
+              <button onClick={() => setPaymentOpen(false)} className="px-2 py-1 border rounded">
+                Close
+              </button>
+            </div>
+            {paymentData ? (
+              <div className="space-y-2 text-sm">
+                <p>
+                  <span className="font-medium">Gateway:</span> {paymentData.gateway}
+                </p>
+                <p>
+                  <span className="font-medium">Status:</span> {paymentData.status}
+                </p>
+                <p>
+                  <span className="font-medium">Amount:</span> ₹{(Number(paymentData.amount || 0) / 100).toFixed(2)}{" "}
+                  {paymentData.currency}
+                </p>
+                {paymentData.razorpay && (
+                  <>
+                    <p>
+                      <span className="font-medium">Payment ID:</span> {paymentData.razorpay.paymentId}
+                    </p>
+                    <p>
+                      <span className="font-medium">Order ID:</span> {paymentData.razorpay.orderId}
+                    </p>
+                    <p>
+                      <span className="font-medium">Signature:</span> {paymentData.razorpay.signature}
+                    </p>
+                    {paymentData.razorpay.method && (
+                      <p>
+                        <span className="font-medium">Method:</span> {paymentData.razorpay.method}
+                      </p>
+                    )}
+                    {paymentData.razorpay.bank && (
+                      <p>
+                        <span className="font-medium">Bank:</span> {paymentData.razorpay.bank}
+                      </p>
+                    )}
+                    {paymentData.razorpay.wallet && (
+                      <p>
+                        <span className="font-medium">Wallet:</span> {paymentData.razorpay.wallet}
+                      </p>
+                    )}
+                    {paymentData.razorpay.vpa && (
+                      <p>
+                        <span className="font-medium">UPI ID:</span> {paymentData.razorpay.vpa}
+                      </p>
+                    )}
+                    {paymentData.razorpay.cardLast4 && (
+                      <p>
+                        <span className="font-medium">Card Last4:</span> {paymentData.razorpay.cardLast4}
+                      </p>
+                    )}
+                  </>
+                )}
+                <p className="text-stone-500 dark:text-zinc-400">
+                  Created: {new Date(paymentData.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-stone-600 dark:text-zinc-400">No payment record found for this order.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -23,39 +23,107 @@ const Products = () => {
 
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [filters, setFilters] = useState({
-    search: searchParams.get("search") || "",
-    category: searchParams.get("category") || "",
-    brand: searchParams.get("brand") || "",
-    minPrice: searchParams.get("minPrice") || "",
-    maxPrice: searchParams.get("maxPrice") || "",
-    sort: searchParams.get("sort") || "createdAt",
-    order: searchParams.get("order") || "desc",
-    featured: searchParams.get("featured") || "",
-    onSale: searchParams.get("onSale") || "",
-  })
+  const decodeFilters = () => {
+    const q = searchParams.get("q")
+    if (!q) {
+      return {
+        search: searchParams.get("search") || "",
+        category: searchParams.get("category") || "",
+        brand: searchParams.get("brand") || "",
+        minPrice: searchParams.get("minPrice") || "",
+        maxPrice: searchParams.get("maxPrice") || "",
+        sort: searchParams.get("sort") || "createdAt",
+        order: searchParams.get("order") || "desc",
+        featured: searchParams.get("featured") || "",
+        onSale: searchParams.get("onSale") || "",
+      }
+    }
+    try {
+      const json = JSON.parse(atob(q))
+      return {
+        search: json.search || "",
+        category: json.category || "",
+        brand: json.brand || "",
+        minPrice: json.minPrice || "",
+        maxPrice: json.maxPrice || "",
+        sort: json.sort || "createdAt",
+        order: json.order || "desc",
+        featured: json.featured || "",
+        onSale: json.onSale || "",
+      }
+    } catch {
+      return {
+        search: "",
+        category: "",
+        brand: "",
+        minPrice: "",
+        maxPrice: "",
+        sort: "createdAt",
+        order: "desc",
+        featured: "",
+        onSale: "",
+      }
+    }
+  }
+
+  const [filters, setFilters] = useState(decodeFilters())
 
   useEffect(() => {
     fetchProducts()
     fetchFiltersData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, currentPage])
 
-  useEffect(() => {
-    const q = searchInput.trim()
-    if (q.length < 2) {
-      setSuggestions([])
+  const writeEncodedParams = (newFilters) => {
+    try {
+      const q = btoa(JSON.stringify(newFilters))
+      const sp = new URLSearchParams()
+      sp.set("q", q)
+      setSearchParams(sp, { replace: true })
+    } catch {
+      // fallback: nothing
+    }
+  }
+
+  const applySearch = () => {
+    const newFilters = { ...filters, search: searchInput }
+    setFilters(newFilters)
+    writeEncodedParams(newFilters)
+    setCurrentPage(1)
+  }
+
+  const handleFilterChange = (key, value) => {
+    if (key === "search") {
+      // handled via searchInput + applySearch button
       return
     }
-    const t = setTimeout(async () => {
-      try {
-        const res = await productsAPI.getAll({ search: q, page: 1, limit: 5, sort: "createdAt", order: "desc" })
-        setSuggestions(res.data.products?.map((p) => ({ id: p._id, name: p.name })) || [])
-      } catch {
-        setSuggestions([])
-      }
-    }, 300)
-    return () => clearTimeout(t)
-  }, [searchInput])
+    updateFiltersAndParams({ ...filters, [key]: value })
+  }
+
+  const updateFiltersAndParams = (newFilters) => {
+    setFilters(newFilters)
+    writeEncodedParams(newFilters)
+    setCurrentPage(1)
+  }
+
+  const clearFilters = () => {
+    const defaultFilters = {
+      search: "",
+      category: "",
+      brand: "",
+      minPrice: "",
+      maxPrice: "",
+      sort: "createdAt",
+      order: "desc",
+      featured: "",
+      onSale: "",
+    }
+    setFilters(defaultFilters)
+    const sp = new URLSearchParams()
+    sp.set("q", btoa(JSON.stringify(defaultFilters)))
+    setSearchParams(sp, { replace: true })
+    setCurrentPage(1)
+  }
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -86,52 +154,6 @@ const Products = () => {
         console.error("Error fetching filters data:", error)
       }
     }
-  }
-
-  const applySearch = () => {
-    const newFilters = { ...filters, search: searchInput }
-    setFilters(newFilters)
-    const newSearchParams = new URLSearchParams()
-    Object.entries(newFilters).forEach(([k, v]) => {
-      if (v) newSearchParams.set(k, v)
-    })
-    setSearchParams(newSearchParams)
-    setCurrentPage(1)
-  }
-
-  const handleFilterChange = (key, value) => {
-    if (key === "search") {
-      // handled via searchInput + applySearch button
-      return
-    }
-    updateFiltersAndParams({ ...filters, [key]: value })
-  }
-
-  const updateFiltersAndParams = (newFilters) => {
-    setFilters(newFilters)
-    const newSearchParams = new URLSearchParams()
-    Object.entries(newFilters).forEach(([k, v]) => {
-      if (v) newSearchParams.set(k, v)
-    })
-    setSearchParams(newSearchParams)
-    setCurrentPage(1)
-  }
-
-  const clearFilters = () => {
-    const defaultFilters = {
-      search: "",
-      category: "",
-      brand: "",
-      minPrice: "",
-      maxPrice: "",
-      sort: "createdAt",
-      order: "desc",
-      featured: "",
-      onSale: "",
-    }
-    setFilters(defaultFilters)
-    setSearchParams({})
-    setCurrentPage(1)
   }
 
   const sortOptions = [
